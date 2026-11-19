@@ -8,7 +8,7 @@
  * from QA retire their activity.
  */
 import type {
-  ActivityDefinition, ApprovalFlow, BuilderDraft, DependencyType, FieldDefinition, ProjectArchetype, WbsObject, WbsObjectType
+  AccessLevel, AccessRule, ActivityDefinition, ApprovalFlow, BuilderDraft, DependencyType, FieldDefinition, ProjectArchetype, WbsObject, WbsObjectType
 } from './index'
 import { isBuildable } from './index'
 import { milestoneOf } from './wbsTree'
@@ -124,3 +124,31 @@ export function nextArchetypeId(existing: ProjectArchetype[]): string {
   const n = existing.reduce((m, a) => Math.max(m, parseInt(a.id.replace(/\D/g, ''), 10) || 0), 0) + 1
   return `ARC-${String(n).padStart(3, '0')}`
 }
+
+/** Release Manager list (reference data; in the live system this comes from the configured database). */
+export const RELEASE_MANAGERS = ['Anil Kapoor', 'Neha Bansal', 'Sandeep Rawat']
+export const ACCESS_LEVELS: { id: AccessLevel; label: string }[] = [
+  { id: 'None', label: 'No access' },
+  { id: 'View', label: 'View' },
+  { id: 'Edit', label: 'View & edit' },
+]
+/** Personas an archetype's access rules cover. */
+export const ACCESS_PERSONAS = ['Vendor', 'PIC', 'SIC', 'DPM', 'ModelCoordinator', 'SectionAdmin', 'Admin'] as const
+
+/** Default rules for the given objects: everyone can view, Admin and the owning personas can edit. */
+export function defaultAccessRules(objectIds: string[]): AccessRule[] {
+  return objectIds.flatMap((objectId) =>
+    ACCESS_PERSONAS.map((persona) => ({ objectId, persona, level: (persona === 'Admin' || persona === 'PIC' ? 'Edit' : 'View') as AccessLevel }))
+  )
+}
+
+/** The archetype as it stood at `version` (what a project started on that version runs on). */
+export function archetypeAtVersion(arc: ProjectArchetype, version: number | undefined): ProjectArchetype {
+  const v = version ?? 1
+  if (v >= (arc.version ?? 1)) return arc
+  const snap = arc.versions?.find((x) => x.version === v)
+  return snap ? { ...arc, wbs: snap.wbs, version: v } : arc
+}
+
+/** True when the archetype can be used to initiate projects. */
+export const isUsable = (a: ProjectArchetype) => a.active && a.status !== 'Draft'

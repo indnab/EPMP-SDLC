@@ -56,7 +56,7 @@ interface Sample {
 const TESTING = ['Under testing', 'OK', 'NG', 'Reference', 'Request rejected']
 const SUBMISSION = ['Submitted', 'Not submitted']
 const AVAIL = ['Available', 'Not available']
-const CLASS = ['MSIL', 'Proprietary']
+const CLASS = ['OEM', 'Proprietary']
 const APPLIC = ['Applicable', 'Not applicable']
 const SAMPLES: Record<'Vendor' | 'PIC', Sample> = {
   Vendor: {
@@ -93,7 +93,7 @@ const SAMPLES: Record<'Vendor' | 'PIC', Sample> = {
     ],
     failures: [
       { id: 'pf1', source: '"classification: bought-out"', part: 'Alternator High-Output', partNo: '31100-M74LD2', field: 'Part classification',
-        reason: '“bought-out” is not MSIL or Proprietary and is too far from either, so nothing was changed.', allowed: CLASS },
+        reason: '“bought-out” is not OEM or Proprietary and is too far from either, so nothing was changed.', allowed: CLASS },
       { id: 'pf2', source: '"target date 31 Feb"', part: 'ORVM Outer Mirror LH', partNo: '84701-M55R10', field: 'Target date – Proprietary part',
         reason: '31 Feb is not a real date. Nothing was changed. Enter the date in the part form.' }
     ],

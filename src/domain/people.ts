@@ -1,5 +1,5 @@
 /**
- * People directory (prototype): one staff ID per MSIL person and the vendor code as the vendor's ID, so every screen
+ * People directory (prototype): one staff ID per OEM person and the vendor code as the vendor's ID, so every screen
  * shows the same "ID: Name". Known PICs keep the IDs they already had; anyone else gets a stable ID from their name.
  */
 const KNOWN_STAFF_IDS: Record<string, string> = {
@@ -14,7 +14,7 @@ const KNOWN_STAFF_IDS: Record<string, string> = {
 /** The SIC of each QA section (sample data). */
 export const SIC_BY_SECTION: Record<string, string> = { NP1: 'K. Iyer' }
 
-/** Staff ID of an MSIL person (PIC, SIC, DPM), e.g. 'S10666'. Empty for an empty name. */
+/** Staff ID of an OEM person (PIC, SIC, DPM), e.g. 'S10666'. Empty for an empty name. */
 export function staffIdOf(name: string | undefined): string {
   const n = (name ?? '').trim()
   if (!n || n === 'Unassigned') return ''

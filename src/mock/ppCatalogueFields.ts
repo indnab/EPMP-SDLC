@@ -59,7 +59,7 @@ export const PP_CATALOGUE_META: Record<string, { name: string; desc: string; don
   },
   "PP12": {
     "name": "MISP Approval & uploading status",
-    "desc": "Track Maruti Inspection Standard for Parts approval and upload status.",
+    "desc": "Track Inspection Standard for Parts approval and upload status.",
     "done": "MISP Approved and shared with vendor."
   },
   "PP13": {
@@ -125,7 +125,7 @@ export const PP_CATALOGUE_FIELDS: Record<string, PpFieldSpec[]> = {
       "t": "dropdown",
       "by": "PIC",
       "o": [
-        "MSIL",
+        "OEM",
         "Proprietary"
       ],
       "req": true
@@ -142,8 +142,8 @@ export const PP_CATALOGUE_FIELDS: Record<string, PpFieldSpec[]> = {
       "req": true
     },
     {
-      "k": "targetDateMsil",
-      "l": "Target Date – MSIL Drawing",
+      "k": "targetDateOem",
+      "l": "Target Date – OEM Drawing",
       "t": "date",
       "by": "System",
       "src": "calculated",
@@ -541,15 +541,15 @@ export const PP_CATALOGUE_FIELDS: Record<string, PpFieldSpec[]> = {
   ],
   "PP09": [
     {
-      "k": "applicability_of_msil_tool_go_ahead",
-      "l": "Applicability of MSIL tool go ahead",
+      "k": "applicability_of_oem_tool_go_ahead",
+      "l": "Applicability of OEM tool go ahead",
       "t": "yesNo",
       "by": "System",
       "src": "enovia"
     },
     {
-      "k": "msil_tool_go_ahead_date",
-      "l": "MSIL tool go ahead date",
+      "k": "oem_tool_go_ahead_date",
+      "l": "OEM tool go ahead date",
       "t": "date",
       "by": "System",
       "src": "enovia",
@@ -648,8 +648,8 @@ export const PP_CATALOGUE_FIELDS: Record<string, PpFieldSpec[]> = {
       "val": true
     },
     {
-      "k": "otMsilPlannedDate",
-      "l": "MSIL Planned Date",
+      "k": "otOemPlannedDate",
+      "l": "OEM Planned Date",
       "t": "date",
       "by": "PIC"
     },
@@ -866,8 +866,8 @@ export const PP_CATALOGUE_FIELDS: Record<string, PpFieldSpec[]> = {
       "val": true
     },
     {
-      "k": "msilInspectionCompleted",
-      "l": "MSIL Inspection Completed (Y/N)",
+      "k": "oemInspectionCompleted",
+      "l": "OEM Inspection Completed (Y/N)",
       "t": "yesNo",
       "by": "PIC"
     },

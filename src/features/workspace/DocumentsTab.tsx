@@ -70,7 +70,7 @@ export function DocumentsTab({ entryId, templateRowId, activityId, partNo, perso
         <p className="text-xs text-[var(--color-muted)]">
           {persona === 'Vendor'
             ? 'Documents you uploaded for this part and activity.'
-            : 'All documents uploaded for this part and activity, by the vendor and by MSIL.'}{' '}
+            : 'All documents uploaded for this part and activity, by the vendor and by OEM.'}{' '}
           Uploads, downloads and deletions are recorded in the audit log.
         </p>
         {canUpload && (

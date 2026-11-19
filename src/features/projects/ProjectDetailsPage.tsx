@@ -6,6 +6,7 @@ import { milestoneRows } from '../../domain/wbsTree'
 import { useMemo, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { Button, Card, Modal, PageHeader, Tabs } from '../../components'
+import { archetypeAtVersion } from '../../domain/governance'
 import { useQAStore } from '../../store/qaStore'
 import { usePersonaStore } from '../../store/personaStore'
 import { PROJECT_INITIATOR, PROJECT_MASTER_LABEL, PROJECT_STATUS_LABEL } from '../../domain/projects'
@@ -26,7 +27,9 @@ export function ProjectDetailsPage() {
   const { currentPersona } = usePersonaStore()
   const [confirmClose, setConfirmClose] = useState(false)
   const project = projects.find((p) => p.no === no)
-  const archetype = project ? archetypes.find((a) => a.id === project.archetypeId) : undefined
+  const liveArchetype = project ? archetypes.find((a) => a.id === project.archetypeId) : undefined
+  // A project keeps the archetype version it started on; later edits apply to new projects only.
+  const archetype = liveArchetype ? archetypeAtVersion(liveArchetype, project?.archetypeVersion) : undefined
 
   const rows = useMemo(
     () => (project && archetype ? buildExecutionRows({ project, archetype, entries, activities, parts, templateRows, models, persona: currentPersona, today: DEMO_TODAY }) : []),

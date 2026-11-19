@@ -13,8 +13,6 @@ import { HeaderSearch } from './header/HeaderSearch'
 import { NotificationBell } from './header/NotificationBell'
 import { UpdateBanner, BUILD_ID } from './UpdateBanner'
 import { useQAStore } from '../store/qaStore'
-import epmpLogo from '../assets/epmp-logo.png'
-import epmpSub from '../assets/epmp-sub.png'
 
 /**
  * TEMPORARY authoring button: rebuilds sample parts (and their activity data) from the CURRENT activity
@@ -130,7 +128,13 @@ const NAV_ITEMS: NavItem[] = [
     icon: ico(<><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2Z" /><path d="M9 21h6M10 17v4M14 17v4" /></>) },
   { to: '/dashboards', label: 'Dashboards', group: 'Modules',   tour: 'nav-dashboards',
     icon: ico(<path d="M4 21V9M12 21V3M20 21v-6" />) },
-  { to: '/projects', label: 'Project Initiation', group: 'Project', tour: 'nav-projects',
+  { to: '/initiation', label: 'Project Initiation', group: 'Project', tour: 'nav-initiation',
+    roles: ['BusinessPartner', 'BPHead', 'GovernanceHead', 'CoEHead', 'BusinessUser', 'Admin'],
+    icon: ico(<><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 8h6M9 12h6M9 16h3" /></>) },
+  { to: '/planning', label: 'Project Planning', group: 'Project', tour: 'nav-planning',
+    roles: ['BusinessPartner', 'BPHead', 'CoEHead', 'ProjectManager', 'TeamMember', 'Admin'],
+    icon: ico(<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4M8 14h3M13 14h3" /></>) },
+  { to: '/projects', label: 'Projects', group: 'Project', tour: 'nav-projects',
     roles: ['ModelCoordinator', 'Admin', 'DPM', 'SIC'],
     icon: ico(<><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M9 3v2h6V3M12 10v6M9 13h6" /></>) },
   { to: '/wbs', label: 'WBS / Project', group: 'Project', tour: 'nav-wbs',
@@ -162,7 +166,7 @@ export function AppLayout() {
   let lastGroup: string | null = null
 
   return (
-    <div className="epmp-shell flex h-screen overflow-hidden">
+    <div className="epmp-shell flex h-screen overflow-hidden" style={{ ['--nav-w' as string]: navCollapsed ? '64px' : '200px' }}>
       {/* Mobile scrim */}
       {mobileOpen && (
         <div className="fixed inset-0 z-40 bg-[rgba(2,6,23,.3)] lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />
@@ -171,25 +175,25 @@ export function AppLayout() {
       {/* ── Sidebar ─────────────────────────────────────────────── */}
       <aside
         className={`z-50 flex flex-none flex-col bg-[var(--color-nav-bg)] text-white shadow-[3px_0_4px_#e6ced2] transition-all duration-200
-          fixed inset-y-0 left-0 w-[248px] ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
-          lg:static lg:translate-x-0 ${navCollapsed ? 'lg:w-[76px]' : 'lg:w-[248px] xl:w-[272px]'}`}
+          fixed inset-y-0 left-0 w-[200px] ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
+          lg:static lg:translate-x-0 ${navCollapsed ? 'lg:w-[64px]' : 'lg:w-[200px]'}`}
       >
         <NavLink
           to="/"
           aria-label="EPMP home"
-          className="flex h-[137px] flex-none flex-col items-center justify-center border-b border-white/[.12] px-5"
+          className="flex h-[72px] flex-none flex-col items-center justify-center border-b border-white/[.12] px-3"
         >
           {navCollapsed ? (
-            <span className="text-xl font-bold tracking-wide">EP</span>
+            <span className="text-lg font-bold tracking-wide">EP</span>
           ) : (
             <>
-              <img src={epmpLogo} alt="EPMP" className="h-auto w-full max-w-[210px]" />
-              <img src={epmpSub} alt="Powered by DE" className="mt-2 h-auto w-[150px] max-w-[85%]" />
+              <span className="text-[22px] font-bold leading-none tracking-[.14em]">EPMP</span>
+              <span className="mt-1 text-[9.5px] uppercase tracking-[.12em] text-[var(--color-nav-sub)]">Enterprise Project Management</span>
             </>
           )}
         </NavLink>
 
-        <nav className="min-h-0 flex-1 overflow-y-auto py-4" aria-label="Main navigation">
+        <nav className="min-h-0 flex-1 overflow-y-auto py-2" aria-label="Main navigation">
           {visibleItems.map((item) => {
             const showGroup = item.group !== lastGroup
             lastGroup = item.group
@@ -221,7 +225,7 @@ export function AppLayout() {
           })}
         </nav>
 
-        <div className="flex flex-none flex-col gap-3 border-t border-white/[.12] px-5 py-[18px]">
+        <div className="flex flex-none flex-col gap-3 border-t border-white/[.12] px-4 py-3">
           <button
             type="button"
             onClick={() => setNavCollapsed((v) => !v)}
@@ -246,7 +250,7 @@ export function AppLayout() {
 
       {/* ── Main column ─────────────────────────────────────────── */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-        <header className="mx-4 flex min-h-[72px] flex-none flex-wrap items-center gap-3 py-2.5 lg:mx-7">
+        <header className="mx-4 flex min-h-[56px] flex-none flex-wrap items-center gap-3 py-2 lg:mx-5">
           <button
             type="button"
             className="flex h-9 w-9 flex-none items-center justify-center lg:hidden"
@@ -273,12 +277,12 @@ export function AppLayout() {
           </div>
         </header>
 
-        <main id="main-content" className="flex-1 overflow-x-hidden overflow-y-auto px-4 pb-7 pt-1 lg:px-7">
+        <main id="main-content" className="flex-1 overflow-x-hidden overflow-y-auto px-4 pb-7 pt-1 lg:px-5">
           <Outlet context={{ startTour: () => setTourOpen(true) } satisfies AppOutletContext} />
         </main>
         <Toaster />
 
-        <footer className="app-footer flex flex-none flex-wrap items-center justify-between gap-2 px-4 pb-4 pt-1 text-[10px] text-[var(--color-muted)] lg:px-7">
+        <footer className="app-footer flex flex-none flex-wrap items-center justify-between gap-2 px-4 pb-3 pt-1 text-[10px] text-[var(--color-muted)] lg:px-5">
           <span>QA Activity Tracker · EPMP design language</span>
           <span>Prototype data · Light mode · build {BUILD_ID}</span>
         </footer>

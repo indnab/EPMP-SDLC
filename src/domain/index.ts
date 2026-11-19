@@ -315,8 +315,24 @@ export interface ProjectArchetype {
   name: string
   description: string
   active: boolean
+  /** SDLC archetype: approving a project of this type triggers JIRA workspace creation. */
+  sdlc?: boolean
   wbs: WbsObject[]
+  /** Draft until the Admin submits it; only Submitted archetypes can be used to initiate projects. Absent = Submitted. */
+  status?: ArchetypeStatus
+  /** Current version, starting at 1. Each submit of an edited archetype adds one; projects keep the version they started on. */
+  version?: number
+  /** Earlier submitted versions (structure only), so projects already running keep their applied structure. */
+  versions?: ArchetypeVersion[]
+  /** Access Management: who can see or edit each WBS object, set by the Admin. */
+  accessRules?: AccessRule[]
 }
+
+export type ArchetypeStatus = 'Draft' | 'Submitted'
+export type AccessLevel = 'None' | 'View' | 'Edit'
+/** One Access Management rule: what a persona can do with a WBS object of the archetype. */
+export interface AccessRule { objectId: string; persona: PersonaId; level: AccessLevel }
+export interface ArchetypeVersion { version: number; submittedAt: string; wbs: WbsObject[] }
 
 /**
  * A builder draft: mirrors ActivityDefinition but is stored separately
@@ -502,7 +518,7 @@ export type ReleaseState = 'Pending' | 'Released' | 'Acknowledged' | 'Returned'
 /** Standard reasons a vendor can give when an activity is late. Shared by the pop-up and the PIC review. */
 export const DELAY_REASON_CATEGORIES = [
   'Drawing or design change (ECN)',
-  'MSIL input pending (approval, drawing, go-ahead)',
+  'OEM input pending (approval, drawing, go-ahead)',
   'Tool or process not ready',
   'Material or sub-supplier (Tier-2) delay',
   'Capacity or manpower constraint',

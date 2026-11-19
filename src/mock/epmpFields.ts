@@ -19,8 +19,8 @@ export const EPMP_ACTIVITIES: EpmpActivitySpec[] = [
       {"k":"drawing_applicability","l":"Drawing Applicability","t":"yesNo","by":"PIC"},
       {"k":"spec_drawing_availability","l":"Spec Drawing availability","t":"dropdown","o":["Available","Not available"],"by":"PIC"},
       {"k":"final_drawing_availability","l":"Final Drawing availability","t":"dropdown","o":["Available","Not available"],"by":"PIC"},
-      {"k":"part_classification","l":"Part classification","t":"dropdown","o":["MSIL","Proprietary"],"by":"PIC"},
-      {"k":"target_date_msil_drawing","l":"Target date – MSIL drawing","t":"date","by":"System","src":"calculated","vendor":true},
+      {"k":"part_classification","l":"Part classification","t":"dropdown","o":["OEM","Proprietary"],"by":"PIC"},
+      {"k":"target_date_oem_drawing","l":"Target date – OEM drawing","t":"date","by":"System","src":"calculated","vendor":true},
       {"k":"target_date_proprietary_part","l":"Target date – Proprietary part","t":"date","by":"System","src":"enovia","vendor":true},
       {"k":"monitoring_required_reason","l":"Monitoring Required Reason","t":"dropdown","o":["New Part","ECN Part"],"by":"PIC"}
     ]
@@ -118,8 +118,8 @@ export const EPMP_ACTIVITIES: EpmpActivitySpec[] = [
   {
     id: "pp-9", name: "OT status", trial: "PP", milestone: "PP", scope: "Both",
     fields: [
-      {"k":"applicability_of_msil_tool_go_ahead","l":"Applicability Of MSIL Tool Go Ahead","t":"yesNo","by":"System","src":"enovia"},
-      {"k":"msil_tool_go_ahead_date","l":"MSIL Tool Go Ahead Date","t":"date","by":"System","src":"enovia","vendor":true},
+      {"k":"applicability_of_oem_tool_go_ahead","l":"Applicability Of OEM Tool Go Ahead","t":"yesNo","by":"System","src":"enovia"},
+      {"k":"oem_tool_go_ahead_date","l":"OEM Tool Go Ahead Date","t":"date","by":"System","src":"enovia","vendor":true},
       {"k":"tool_go_ahead_remark","l":"Tool Go Ahead Remark","t":"longText","by":"Vendor","val":true},
       {"k":"tool_cutting_status","l":"Tool Cutting Status","t":"dropdown","o":["Started","Completed"],"by":"Vendor","val":true},
       {"k":"tool_cutting_planned_start_date","l":"Tool Cutting Planned Start Date","t":"date","by":"Vendor","val":true},
@@ -170,8 +170,8 @@ export const EPMP_ACTIVITIES: EpmpActivitySpec[] = [
       {"k":"deviation_raised_pop_up","l":"Deviation raised (pop-up)","t":"yesNo","by":"PIC"},
       {"k":"e_doc_number","l":"E-Doc number","t":"text","by":"PIC"},
       {"k":"deviation_approval_status","l":"Deviation approval status","t":"dropdown","o":["Approved","Rejected","Pending","In progress"],"by":"System","src":"edoc"},
-      {"k":"msil_inspection_completed","l":"MSIL Inspection Completed","t":"yesNo","by":"PIC"},
-      {"k":"msil_observation","l":"MSIL Observation","t":"dropdown","o":["OK","NG"],"by":"PIC"}
+      {"k":"oem_inspection_completed","l":"OEM Inspection Completed","t":"yesNo","by":"PIC"},
+      {"k":"oem_observation","l":"OEM Observation","t":"dropdown","o":["OK","NG"],"by":"PIC"}
     ]
   },
   {
@@ -471,8 +471,8 @@ export const EPMP_ACTIVITIES: EpmpActivitySpec[] = [
       {"k":"ng_dropdown","l":"NG Dropdown","t":"multiSelect","o":["Appearance","Dimension","Material","Performance","Regulation"],"by":"Vendor","val":true},
       {"k":"ng_observation","l":"NG observation","t":"longText","by":"Vendor","val":true},
       {"k":"correction_timeline","l":"Correction timeline","t":"date","by":"Vendor","val":true},
-      {"k":"msil_inspection_completed","l":"MSIL inspection completed","t":"yesNo","by":"PIC"},
-      {"k":"msil_observation","l":"MSIL observation","t":"dropdown","o":["OK","NG"],"by":"PIC"},
+      {"k":"oem_inspection_completed","l":"OEM inspection completed","t":"yesNo","by":"PIC"},
+      {"k":"oem_observation","l":"OEM observation","t":"dropdown","o":["OK","NG"],"by":"PIC"},
       {"k":"correction_beyond_mrd","l":"Correction beyond MRD","t":"flag","by":"System","src":"calculated"},
       {"k":"deviation_raised_pop_up","l":"Deviation raised (pop-up)","t":"yesNo","by":"PIC"},
       {"k":"e_doc_number","l":"E-Doc number","t":"text","by":"PIC"},
@@ -571,7 +571,7 @@ export const EPMP_ACTIVITIES: EpmpActivitySpec[] = [
     fields: [
       {"k":"ifm_category","l":"IFM category","t":"dropdown","o":["A","B","C","D"],"by":"PIC"},
       {"k":"mail_status","l":"Mail status","t":"dropdown","o":["Mail drafted","Mail sent from DVM-san desk"],"by":"PIC","src":"dropdown"},
-      {"k":"ifm_check_sheet_status","l":"IFM check sheet status","t":"dropdown","o":["Submitted by vendor","Approved by MSIL"],"by":"System","src":"sap"},
+      {"k":"ifm_check_sheet_status","l":"IFM check sheet status","t":"dropdown","o":["Submitted by vendor","Approved by OEM"],"by":"System","src":"sap"},
       {"k":"ifm_readiness_date","l":"IFM readiness Date","t":"date","by":"PIC"},
       {"k":"ifm_readiness","l":"IFM readiness","t":"yesNo","by":"Vendor","val":true},
       {"k":"if_n_readiness_remark","l":"If N, readiness remark","t":"longText","by":"Vendor","val":true}
@@ -604,10 +604,10 @@ export const EPMP_ACTIVITIES: EpmpActivitySpec[] = [
   {
     id: "sop-15", name: "PPVT confirmation", trial: "Pilot/SOP", milestone: "SOP", scope: "Both",
     fields: [
-      {"k":"ppvt_msil_scope","l":"PPVT MSIL Scope","t":"yesNo","by":"PIC"},
-      {"k":"ppvt_msil_scope_volume","l":"PPVT MSIL Scope Volume","t":"number","by":"System","src":"sap"},
-      {"k":"ppvt_msil_scope_status","l":"PPVT MSIL Scope Status","t":"dropdown","o":["OK","NG"],"by":"System","src":"sap"},
-      {"k":"ppvt_msil_scope_planned_date_actual_date","l":"PPVT MSIL Scope Planned Date Actual Date","t":"text","by":"System","src":"sap"},
+      {"k":"ppvt_oem_scope","l":"PPVT OEM Scope","t":"yesNo","by":"PIC"},
+      {"k":"ppvt_oem_scope_volume","l":"PPVT OEM Scope Volume","t":"number","by":"System","src":"sap"},
+      {"k":"ppvt_oem_scope_status","l":"PPVT OEM Scope Status","t":"dropdown","o":["OK","NG"],"by":"System","src":"sap"},
+      {"k":"ppvt_oem_scope_planned_date_actual_date","l":"PPVT OEM Scope Planned Date Actual Date","t":"text","by":"System","src":"sap"},
       {"k":"ppvt_vendor_scope","l":"PPVT Vendor Scope","t":"longText","by":"Vendor","val":true},
       {"k":"ppvt_ng_reason","l":"PPVT NG Reason","t":"longText","by":"Vendor","val":true}
     ]
@@ -717,7 +717,7 @@ export const EPMP_ACTIVITIES: EpmpActivitySpec[] = [
       {"k":"spare_kit_parts_spare_kit_parts_verificati","l":"Spare Kit Parts – Spare Kit Parts Verification & Process Audit completed","t":"yesNo","by":"Vendor","val":true},
       {"k":"spare_kit_parts_mix_up_control_with_simila","l":"Spare Kit Parts – Mix-up control with similar parts available for each kit part","t":"yesNo","by":"Vendor","val":true},
       {"k":"spare_kit_parts_spare_kit_parts_remarks","l":"Spare Kit Parts – Spare Kit Parts Remarks","t":"longText","by":"Vendor","val":true},
-      {"k":"bom_confirmation_bom_verified_against_msil","l":"BOM Confirmation – BOM verified against MSIL BOM for set parts, spare kit parts and part colour matrix","t":"yesNo","by":"Vendor","val":true},
+      {"k":"bom_confirmation_bom_verified_against_oem","l":"BOM Confirmation – BOM verified against OEM BOM for set parts, spare kit parts and part colour matrix","t":"yesNo","by":"Vendor","val":true},
       {"k":"bom_confirmation_bom_confirmation_remarks","l":"BOM Confirmation – BOM Confirmation Remarks","t":"longText","by":"Vendor","val":true},
       {"k":"eol_inspection_parameters_old_and_new_insp","l":"EOL Inspection Parameters – Old and New Inspection Parameter Comparison verified","t":"yesNo","by":"Vendor","val":true},
       {"k":"eol_inspection_parameters_difference_found","l":"EOL Inspection Parameters – Difference found between Old and New Inspection Parameters","t":"yesNo","by":"Vendor","val":true},

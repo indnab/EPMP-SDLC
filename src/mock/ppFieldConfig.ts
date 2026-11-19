@@ -60,9 +60,9 @@ const PP1: PpFieldSpec[] = [
   { k: 'drawing_applicability', l: 'Drawing applicability', t: 'yesNo', by: 'PIC' },
   { k: 'spec_drawing_availability', l: 'Spec drawing availability', t: 'dropdown', o: ['Available', 'Not Available'], by: 'PIC', src: 'mapping', dash: true, list: true, rules: [YES] },
   { k: 'final_drawing_availability', l: 'Final drawing availability', t: 'dropdown', o: ['Available', 'Not Available'], by: 'PIC', src: 'mapping', rules: [YES] },
-  { k: 'part_classification', l: 'Part classification', t: 'dropdown', o: ['MSIL', 'Proprietary'], by: 'PIC', src: 'mapping', dash: true, list: true, rules: [YES] },
+  { k: 'part_classification', l: 'Part classification', t: 'dropdown', o: ['OEM', 'Proprietary'], by: 'PIC', src: 'mapping', dash: true, list: true, rules: [YES] },
   { k: 'monitoring_required_reason', l: 'Monitoring required reason', t: 'dropdown', o: ['New Part', 'ECN Part'], by: 'PIC', src: 'sap', rules: [YES] },
-  { k: 'target_date_msil_drawing', l: 'Target date – MSIL drawing', t: 'date', by: 'System', src: 'calculated', rules: [YES, onlyWhen('part_classification', 'MSIL')] },
+  { k: 'target_date_oem_drawing', l: 'Target date – OEM drawing', t: 'date', by: 'System', src: 'calculated', rules: [YES, onlyWhen('part_classification', 'OEM')] },
   { k: 'target_date_proprietary_part', l: 'Target date – Proprietary part', t: 'date', by: 'System', src: 'enovia', rules: [YES, onlyWhen('part_classification', 'Proprietary')] }
 ]
 
@@ -74,7 +74,7 @@ const PP2: PpFieldSpec[] = [
   { k: 'data_update_pending', l: 'Data update pending', t: 'flag', by: 'System', src: 'calculated' },
   { k: 'sap_spec_meeting_status', l: 'SAP spec meeting status', t: 'dropdown', o: ['Not Initiated', 'Initiated', 'Pending For Approval', 'Approved'], by: 'System', src: 'sap', dash: true, list: true },
   { k: 'enovia_spec_meeting_status', l: 'Enovia spec meeting status', t: 'dropdown', o: ['Initiated', 'Pending', 'Approved'], by: 'System', src: 'enovia' },
-  { k: 'planned_start_date', l: 'Planned start date (MSIL PIC provides the target date to the vendor)', t: 'date', by: 'PIC', src: 'enovia' },
+  { k: 'planned_start_date', l: 'Planned start date (OEM PIC provides the target date to the vendor)', t: 'date', by: 'PIC', src: 'enovia' },
   { k: 'planned_finish_date', l: 'Planned finish date', t: 'date', by: 'Vendor', val: true },
   { k: 'actual_start_date', l: 'Actual start date', t: 'date', by: 'System', src: 'sap' },
   { k: 'sap_actual_end_date', l: 'SAP actual end date', t: 'date', by: 'System', src: 'sap' },

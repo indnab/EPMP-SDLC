@@ -27,7 +27,7 @@ export function InitiateProjectPage() {
   const [submitted, setSubmitted] = useState(false)
   const [storeErrors, setStoreErrors] = useState<Record<string, string>>({})
 
-  const activeArchetypes = archetypes.filter((a) => a.active)
+  const activeArchetypes = archetypes.filter((a) => a.active && a.status !== 'Draft')
   const existingBlock = (modelName: string): ModelDraft => ({ name: modelName, isNew: false, mrds: { ...(models.find((m) => m.name === modelName)?.mrds ?? {}) } })
 
   // Name → model preselect (until the user changes the model list themselves).
@@ -177,7 +177,7 @@ export function InitiateProjectPage() {
       )}
       {submitted && errors._form && <p className="mb-3 text-[11.5px] text-red-600">{errors._form}</p>}
 
-      <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-end gap-3 border-t border-[var(--color-border)] bg-white/90 px-7 py-3 backdrop-blur lg:left-[248px] xl:left-[272px]">
+      <div className="fixed bottom-0 left-0 right-0 z-30 flex justify-end gap-3 border-t border-[var(--color-border)] bg-white/90 px-7 py-3 backdrop-blur lg:left-[var(--nav-w)]">
         <Link to="/projects" className="inline-flex items-center rounded-[10px] border border-[var(--color-border)] bg-white px-3.5 py-2 text-xs font-semibold text-[var(--color-text)] hover:bg-[#fafafa]">Cancel</Link>
         <Button variant="primary" size="md" onClick={submit}>Initiate Project</Button>
       </div>

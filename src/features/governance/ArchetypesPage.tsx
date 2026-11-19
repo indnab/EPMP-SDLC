@@ -63,7 +63,7 @@ export function ArchetypesPage({ embedded }: { embedded?: boolean } = {}) {
             </select>
             <DownloadMenu title="Manage Archetypes" />
             {isAdmin && (
-              <Button variant="primary" size="sm" onClick={() => navigate('/governance/new')}>+ Add</Button>
+              <Button variant="primary" size="sm" onClick={() => navigate('/governance/new')}>+ Add Archetype</Button>
             )}
           </>
         </div>
@@ -82,7 +82,7 @@ export function ArchetypesPage({ embedded }: { embedded?: boolean } = {}) {
             </select>
             <DownloadMenu title="Manage Archetypes" />
             {isAdmin && (
-              <Button variant="primary" size="sm" onClick={() => navigate('/governance/new')}>+ Add</Button>
+              <Button variant="primary" size="sm" onClick={() => navigate('/governance/new')}>+ Add Archetype</Button>
             )}
           </>
           }
@@ -97,6 +97,8 @@ export function ArchetypesPage({ embedded }: { embedded?: boolean } = {}) {
                 <tr className="border-b border-[var(--color-border)] bg-[#dce8fb] text-left text-[10.5px] font-medium text-[#344054]">
                   <th className="px-4 py-3">Archetype ID</th>
                   <th className="px-4 py-3">Project Archetype</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center">Version</th>
                   <th className="px-4 py-3 text-center">Number of Projects Associated</th>
                   <th className="px-4 py-3 text-center">WBS Objects</th>
                   <th className="px-4 py-3 text-center">QA Activities (configured)</th>
@@ -106,7 +108,7 @@ export function ArchetypesPage({ embedded }: { embedded?: boolean } = {}) {
               </thead>
               <tbody>
                 {rows.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-[var(--color-muted)]">No archetypes yet.{isAdmin ? ' Click “+ Add” to create one.' : ''}</td></tr>
+                  <tr><td colSpan={9} className="px-4 py-10 text-center text-[var(--color-muted)]">No archetypes yet.{isAdmin ? ' Click “+ Add” to create one.' : ''}</td></tr>
                 ) : rows.map(({ a, projects, objects, qa, configured }) => (
                   <tr key={a.id} className="border-b border-[var(--color-border)] last:border-0 hover:bg-secondary/40">
                     <td className="px-4 py-2.5">
@@ -116,12 +118,16 @@ export function ArchetypesPage({ embedded }: { embedded?: boolean } = {}) {
                       <div className="font-medium text-[#101828]">{a.name}</div>
                       {a.description && <div className="max-w-[420px] truncate text-[10.5px] text-[var(--color-muted)]" title={a.description}>{a.description}</div>}
                     </td>
+                    <td className="px-4 py-2.5 text-center">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${a.status === 'Draft' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>{a.status === 'Draft' ? 'Draft' : 'Submitted'}</span>
+                    </td>
+                    <td className="px-4 py-2.5 text-center tabular-nums">v{a.version ?? 1}</td>
                     <td className="px-4 py-2.5 text-center tabular-nums">{projects}</td>
                     <td className="px-4 py-2.5 text-center tabular-nums">{objects}</td>
                     <td className="px-4 py-2.5 text-center tabular-nums">{qa} <span className="text-[var(--color-muted)]">({configured})</span></td>
                     <td className="px-4 py-2.5 text-center" data-export-ignore="true">
                       <span className="inline-flex justify-center">
-                        <Switch checked={a.active} disabled={!isAdmin} label={`${a.name} active`} onChange={(v) => setArchetypeActive(a.id, v)} />
+                        <Switch checked={a.active} disabled={!isAdmin || a.status === 'Draft'} label={`${a.name} active`} onChange={(v) => setArchetypeActive(a.id, v)} />
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-center">

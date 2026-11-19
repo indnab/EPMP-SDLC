@@ -18,6 +18,8 @@ export interface Project {
   /** Free text. Not required to be unique; `no` is the identity. */
   name: string
   archetypeId: string
+  /** The archetype version the project started on (absent = 1). Later archetype edits do not change it. */
+  archetypeVersion?: number
   master: ProjectMaster
   /** The project's model (ModelRecord.name, canonical casing): exactly one for Vehicle, empty for NonVehicle. */
   modelNames: string[]
@@ -147,6 +149,7 @@ export function validateInitiation(input: InitiateProjectInput, ctx: InitiationC
   const arc = ctx.archetypes.find((a) => a.id === input.archetypeId)
   if (!arc) errors.archetypeId = 'Select a project archetype.'
   else if (!arc.active) errors.archetypeId = 'This archetype is inactive.'
+  else if (arc.status === 'Draft') errors.archetypeId = 'This archetype has not been submitted yet.'
 
   if (input.master !== 'Vehicle' && input.master !== 'NonVehicle') errors.master = 'Select a project master.'
 

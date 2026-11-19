@@ -8,12 +8,13 @@
  */
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { PageHeader, Card, Button, Modal } from '../../components'
+import { PageHeader, Card, Button, Modal, Tabs } from '../../components'
 import { Icon } from '../../components/Icon'
 import { useQAStore } from '../../store/qaStore'
 import { usePersonaStore } from '../../store/personaStore'
-import type { DependencyType, MilestoneDateType, ProjectArchetype, WbsChecklistItem, WbsDependency, WbsLevel, WbsObject, WbsObjectType } from '../../domain'
-import { DEP_LABEL, DEP_TYPES, WBS_TYPES, activityIdFor, nextArchetypeId } from '../../domain/governance'
+import type { AccessLevel, AccessRule, DependencyType, MilestoneDateType, ProjectArchetype, WbsChecklistItem, WbsDependency, WbsLevel, WbsObject, WbsObjectType } from '../../domain'
+import { ACCESS_LEVELS, ACCESS_PERSONAS, DEP_LABEL, DEP_TYPES, RELEASE_MANAGERS, WBS_TYPES, activityIdFor, defaultAccessRules, nextArchetypeId } from '../../domain/governance'
+import { PERSONAS } from '../../store/personaStore'
 import { isBuildable } from '../../domain'
 import { WBS_LEVELS, WBS_LEVEL_LABEL, allowedLevels, dateOptions, reparent, subtreeIds, wbsTree } from '../../domain/wbsTree'
 
@@ -50,7 +51,7 @@ const newRow = (level: WbsLevel, parentId?: string): WbsObject => ({
 export function ArchetypeDetailsPage() {
   const { id: routeId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { archetypes, activities, drafts, saveArchetype } = useQAStore()
+  const { archetypes, activities, drafts, projects, saveArchetype, deleteArchetype } = useQAStore()
   const { currentPersona } = usePersonaStore()
   const isAdmin = currentPersona === 'Admin'
   const isNew = routeId === 'new'
@@ -65,6 +66,10 @@ export function ArchetypeDetailsPage() {
   const [checklistFor, setChecklistFor] = useState<string | null>(null)
   const [datesFor, setDatesFor] = useState<string | null>(null)
   const [touched, setTouched] = useState(false)
+  const [tab, setTab] = useState<'details' | 'access'>('details')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [notice, setNotice] = useState('')
 
   const tree = wbsTree(arc.wbs)
   const codeOf = new Map(tree.map((n) => [n.obj.id, n.code]))
@@ -117,13 +122,15 @@ export function ArchetypeDetailsPage() {
   }
 
   /** Validate and save the archetype (buildable rows are synced into activities). Returns false if something is missing. */
-  const persist = (): boolean => {
+  const persist = (submit = false): boolean => {
     setTouched(true)
     if (invalid) return false
     // Blank rows are dropped; a dependency must point at a kept row.
     const keep = new Set(named.map((o) => o.id))
+    const rules = (arc.accessRules ?? []).filter((r) => keep.has(r.objectId))
     saveArchetype({
       ...arc,
+      accessRules: rules,
       name: arc.name.trim(),
       description: arc.description.trim(),
       wbs: tree.map((n) => n.obj).filter((o) => keep.has(o.id)).map((o) => ({
@@ -132,10 +139,36 @@ export function ArchetypeDetailsPage() {
         dependency: o.dependency && keep.has(o.dependency.onObjectId) ? o.dependency : undefined,
         ...(o.level === 'Milestone' ? { dateTypes: (o.dateTypes ?? []).filter((t) => t.label.trim()).map((t) => ({ ...t, label: t.label.trim() })) } : {}),
       })),
-    })
+    }, { submit })
     return true
   }
-  const submit = () => { if (persist()) navigate('/governance') }
+  // Access must be defined (Access Management tab) before an archetype can be submitted.
+  const accessMissing = !(arc.accessRules && arc.accessRules.length > 0)
+  const submit = () => {
+    if (accessMissing) { setTab('access'); setTouched(true); return }
+    if (persist(true)) navigate('/governance')
+  }
+  const save = () => { if (persist(false)) { setNotice(isSubmitted ? 'Saved. Projects created from now on use this version.' : 'Draft saved.'); setTimeout(() => setNotice(''), 4000) } }
+  const next = () => { if (persist(false)) { openAccess() } }
+  const openAccess = () => {
+    setArc((a) => {
+      const ids = a.wbs.filter((o) => o.name.trim()).map((o) => o.id)
+      const have = new Set((a.accessRules ?? []).map((r) => r.objectId))
+      const missing = ids.filter((id) => !have.has(id))
+      return missing.length ? { ...a, accessRules: [...(a.accessRules ?? []), ...defaultAccessRules(missing)] } : a
+    })
+    setTab('access')
+  }
+  const setAccess = (objectId: string, persona: AccessRule['persona'], level: AccessLevel) =>
+    setArc((a) => ({ ...a, accessRules: (a.accessRules ?? []).map((r) => (r.objectId === objectId && r.persona === persona ? { ...r, level } : r)) }))
+  const saved = archetypes.find((a) => a.id === arc.id)
+  const isSubmitted = !!saved && saved.status !== 'Draft'
+  const usedBy = projects.filter((p) => p.archetypeId === arc.id).length
+  const doDelete = () => {
+    const r = deleteArchetype(arc.id)
+    if (r.ok) navigate('/governance')
+    else setDeleteError(r.reason)
+  }
   /** "Build activity": save the archetype, then open this row's activity in the Activity Builder (returns here). */
   const build = (o: WbsObject) => {
     if (!o.name.trim()) { setTouched(true); return }
@@ -160,16 +193,31 @@ export function ArchetypeDetailsPage() {
     <div className="pb-24">
       <PageHeader title={isNew ? 'Add Archetype' : 'Archetype Details'} section="Governance › Archetypes" />
 
+      <Tabs className="mb-4" activeId={tab} onChange={(id) => (id === 'access' ? openAccess() : setTab('details'))}
+        items={[{ id: 'details', label: 'Archetype Details' }, { id: 'access', label: 'Access Management' }]} />
+
+      {tab === 'access' && <AccessCard arc={arc} tree={tree} isAdmin={isAdmin} touched={touched && accessMissing} onChange={setAccess} />}
+
+      {tab === 'details' && (<>
       <Card className="mb-4">
         <div className="mb-1 flex items-center justify-between">
           <h2 className="m-0 text-[14px] font-semibold text-[#101828]">Archetype Details</h2>
-          <span className="font-mono text-[10.5px] text-[var(--color-muted)]">{arc.id}</span>
+          <span className="flex items-center gap-2">
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${isSubmitted ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>{isSubmitted ? 'Submitted' : 'Draft'}</span>
+            {isSubmitted && <span className="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-primary">v{saved?.version ?? 1}</span>}
+            <span className="font-mono text-[10.5px] text-[var(--color-muted)]">{arc.id}</span>
+          </span>
         </div>
+        {isSubmitted && isAdmin && <p className="mb-1 text-[10.5px] text-[var(--color-muted)]">Changes apply to projects created from now on{usedBy ? `; the ${usedBy} existing project${usedBy === 1 ? '' : 's'} keep the structure they started with` : ''}.</p>}
         {!isAdmin && <p className="mb-3 text-[10.5px] text-[var(--color-muted)]">Read-only · only Admin can edit archetypes.</p>}
+        <label className="mt-3 flex items-center gap-2 text-[11.5px] text-[#344054]">
+          <input type="checkbox" checked={!!arc.sdlc} disabled={!isAdmin} onChange={(e) => setArc({ ...arc, sdlc: e.target.checked })} />
+          SDLC archetype (approving a project of this type triggers JIRA workspace creation)
+        </label>
         <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2">
           <label className="block">
             <span className="mb-1 block text-[10.5px] font-medium text-[#344054]">Project Archetype Name <span className="text-red-500">*</span></span>
-            <input value={arc.name} disabled={!isAdmin} onChange={(e) => setArc({ ...arc, name: e.target.value })} className={inputCls} placeholder="e.g. Vehicle Development – QA" />
+            <input value={arc.name} disabled={!isAdmin || !!saved} title={saved ? 'The name cannot be changed once the archetype is created' : undefined} onChange={(e) => setArc({ ...arc, name: e.target.value })} className={inputCls} placeholder="e.g. Vehicle Development – QA" />
             {touched && errors.name && <span className="mt-1 block text-[10.5px] text-red-600">Enter a name.</span>}
           </label>
           <label className="block">
@@ -325,11 +373,29 @@ export function ArchetypeDetailsPage() {
         )}
       </Card>
 
+      </>)}
+
       {/* Sticky footer actions */}
-      <div className="fixed bottom-0 right-0 z-30 flex justify-end gap-3 border-t border-[var(--color-border)] bg-white/90 px-7 py-3 backdrop-blur lg:left-[248px] xl:left-[272px] left-0">
+      <div className="fixed bottom-0 right-0 z-30 flex justify-end gap-3 border-t border-[var(--color-border)] bg-white/90 px-7 py-3 backdrop-blur lg:left-[var(--nav-w)] left-0">
+        {notice && <span role="status" className="mr-auto self-center text-[11px] text-emerald-700">{notice}</span>}
+        {isAdmin && saved && <Button variant="ghost" size="md" className={notice ? '' : 'mr-auto'} onClick={() => { setDeleteError(''); setConfirmDelete(true) }}>Delete archetype</Button>}
         <Button variant="secondary" size="md" onClick={() => navigate('/governance')}>{isAdmin ? 'Cancel' : 'Back'}</Button>
+        {isAdmin && <Button variant="secondary" size="md" onClick={save} disabled={touched && invalid}>Save</Button>}
+        {isAdmin && tab === 'details' && <Button variant="secondary" size="md" onClick={next} disabled={touched && invalid}>Next</Button>}
         {isAdmin && <Button variant="primary" size="md" onClick={submit} disabled={touched && invalid}>Submit</Button>}
       </div>
+
+      {confirmDelete && (
+        <Modal open onClose={() => setConfirmDelete(false)} size="sm" title={`Delete ${arc.name || 'archetype'}?`}
+          footer={<>
+            <Button variant="secondary" size="md" onClick={() => setConfirmDelete(false)}>Cancel</Button>
+            <Button variant="primary" size="md" onClick={doDelete} disabled={usedBy > 0}>Delete</Button>
+          </>}>
+          <p className="text-[11.5px] text-[#344054]">This removes the archetype, its WBS and access rules, and retires the activities built from it. This cannot be undone.</p>
+          {usedBy > 0 && <p className="mt-2 text-[11.5px] text-red-600">{usedBy} project{usedBy === 1 ? ' uses' : 's use'} this archetype, so it cannot be deleted. Mark it inactive in the list instead.</p>}
+          {deleteError && <p className="mt-2 text-[11.5px] text-red-600">{deleteError}</p>}
+        </Modal>
+      )}
 
       {depObj && (
         <DependencyModal
@@ -520,7 +586,62 @@ function ChecklistModal({ obj, readOnly, onClose, onSave }: {
         <input type="checkbox" checked={owner} disabled={readOnly} onChange={(e) => setOwner(e.target.checked)} />
         QA Ownership to be with Release Manager
       </label>
+      <p className="mt-1 text-[10.5px] text-[var(--color-muted)]">
+        {owner ? <>Owners of this QA item can only be Release Managers: {RELEASE_MANAGERS.join(', ')}.</> : 'Otherwise the owner is any member allocated to the project.'}
+      </p>
       <p className="mt-2 text-[10.5px] text-[var(--color-muted)]">Each item becomes a Yes/No field on this activity (required if Mandatory). You can refine them in the Activity Builder.</p>
     </Modal>
+  )
+}
+
+/** Access Management: what each persona can do with each WBS object. Defined after the objects are created. */
+function AccessCard({ arc, tree, isAdmin, touched, onChange }: {
+  arc: ProjectArchetype
+  tree: { obj: WbsObject; code: string; depth: number }[]
+  isAdmin: boolean
+  touched: boolean
+  onChange: (objectId: string, persona: AccessRule['persona'], level: AccessLevel) => void
+}) {
+  const rows = tree.filter((n) => n.obj.name.trim())
+  const levelOf = (oid: string, persona: string): AccessLevel => (arc.accessRules ?? []).find((r) => r.objectId === oid && r.persona === persona)?.level ?? 'None'
+  return (
+    <Card flush className="!overflow-visible">
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--color-border)] px-4 py-3">
+        <h3 className="m-0 text-[12px] font-semibold text-[#101828]">Access Management</h3>
+        <span className="ml-auto text-[10.5px] text-[var(--color-muted)]">Access is set per WBS object, for each role. Roles come from the role master.</span>
+      </div>
+      {rows.length === 0 ? (
+        <p className="px-4 py-10 text-center text-[var(--color-muted)]">Define WBS objects on the Archetype Details tab first.</p>
+      ) : (
+        <div className="table-scroll" style={{ maxHeight: 'calc(100vh - 380px)' }}>
+          <table className="w-full text-[11.5px]">
+            <thead>
+              <tr className="border-b border-[var(--color-border)] bg-[#dce8fb] text-left text-[10.5px] font-medium text-[#344054]">
+                <th className="w-24 px-3 py-2.5">No.</th>
+                <th className="min-w-[240px] px-3 py-2.5">WBS Object</th>
+                {ACCESS_PERSONAS.map((p) => <th key={p} className="min-w-[120px] px-3 py-2.5">{PERSONAS.find((x) => x.id === p)?.label ?? p}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ obj, code, depth }) => (
+                <tr key={obj.id} className={`border-b border-[var(--color-border)] last:border-0 ${obj.level === 'Milestone' ? 'bg-[#f8faff]' : ''}`}>
+                  <td className="px-3 py-1.5 font-mono text-[10.5px] text-[#344054]">{code}</td>
+                  <td className="px-3 py-1.5"><span style={{ paddingLeft: depth * 16 }} className={obj.level === 'Milestone' ? 'font-semibold' : ''}>{obj.name}</span></td>
+                  {ACCESS_PERSONAS.map((p) => (
+                    <td key={p} className="px-3 py-1.5">
+                      <select value={levelOf(obj.id, p)} disabled={!isAdmin} aria-label={`${code} access for ${p}`}
+                        onChange={(e) => onChange(obj.id, p, e.target.value as AccessLevel)} className={cellInput}>
+                        {ACCESS_LEVELS.map((l) => <option key={l.id} value={l.id}>{l.label}</option>)}
+                      </select>
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {touched && <p className="border-t border-[var(--color-border)] px-4 py-2 text-[10.5px] text-red-600">Define access for the objects, then Submit.</p>}
+    </Card>
   )
 }

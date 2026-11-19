@@ -420,7 +420,7 @@ export function evaluateConditionalRules(
  * Evaluates pure calculated/derived fields.
  *
  * @param milestoneMrd The MRD (YYYY-MM-DD) of the instance's milestone for the part's model,
- *   or undefined when blank. MRD-derived fields (target_date_msil, planned_start_system,
+ *   or undefined when blank. MRD-derived fields (target_date_oem, planned_start_system,
  *   planned_finish_system, otop_target_date, actual_date_beyond_mrd) are cleared while the
  *   MRD is blank; otop_delay_cases is then calculated from the actual date only.
  */
@@ -454,8 +454,8 @@ export function evaluateCalculatedFields(
       continue
     }
 
-    // PP #1: Target date – MSIL drawing (Date as per MRD)
-    if (def.id === 'pp-1' && key === 'target_date_msil_drawing') {
+    // PP #1: Target date – OEM drawing (Date as per MRD)
+    if (def.id === 'pp-1' && key === 'target_date_oem_drawing') {
       setFromMrd(key, 0)
     }
 
@@ -2256,6 +2256,6 @@ export function taskOf(
     if (rs === 'Released') return 'Vendor Acknowledge'
     return status === 'Sent back' ? 'Vendor Resubmit' : 'Vendor Submit'
   }
-  // The first step is MSIL's own entry (e.g. PIC confirmation).
+  // The first step is OEM's own entry (e.g. PIC confirmation).
   return status === 'Sent back' ? `${first.role} Rework` : `${first.role} Data Entry`
 }

@@ -101,6 +101,8 @@ export const SEED_ARCHETYPES: ProjectArchetype[] = [
     name: 'Vehicle Development – QA',
     description: 'QA activities for a new vehicle model: Prototype (PP), Mass Pre-Production (MPP) and Pilot/SOP trials.',
     active: true,
+    status: 'Submitted' as const,
+    version: 1,
     // Milestone rows (ids = milestone ids, so model MRD keys like 'PP:Weld' resolve), each followed by its activities.
     wbs: SEED_MS.flatMap((ms) => [
       {
@@ -192,8 +194,8 @@ export async function fetchFromEnovia(partNo: string): Promise<{ success: boolea
       enoviaSpecMeetingStatus: ['Initiated', 'Pending', 'Approved'][h % 3],
       plannedStartDate: day(2),
       enoviaActualEndDate: day(16),
-      applicabilityOfMsilToolGoAhead: yn(['Y', 'Y', 'N']),
-      msilToolGoAheadDate: day(4),
+      applicabilityOfOemToolGoAhead: yn(['Y', 'Y', 'N']),
+      oemToolGoAheadDate: day(4),
       otPlannedDate: day(21),
       inspectionTargetDate: day(12),
       inspectionCompleted: yn(['Y', 'N', 'Y']),

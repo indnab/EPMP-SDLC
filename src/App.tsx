@@ -20,6 +20,13 @@ import { AuditLogPage } from './features/audit/AuditLogPage'
 import { WbsPage } from './features/wbs/WbsPage'
 import { DependenciesPage } from './features/dependencies/DependenciesPage'
 import { GovernancePage } from './features/governance/GovernancePage'
+import { InitiationPage } from './features/initiation/InitiationPage'
+import { InitiationFormPage } from './features/initiation/InitiationFormPage'
+import { PlanningPage } from './features/planning/PlanningPage'
+import { PmEstimatesPage } from './features/planning/PmEstimatesPage'
+import { PlanWbsPage } from './features/planning/PlanWbsPage'
+import { SchedulePage } from './features/planning/SchedulePage'
+import { BrdUploadPage } from './features/initiation/BrdUploadPage'
 import { ProjectsPage } from './features/projects/ProjectsPage'
 import { InitiateProjectPage } from './features/projects/InitiateProjectPage'
 import { ProjectDetailsPage } from './features/projects/ProjectDetailsPage'
@@ -86,6 +93,13 @@ export default function App() {
           <Route path="intake" element={<Navigate to="/parts" replace />} />
           <Route path="wbs" element={<WbsPage />} />
           <Route path="dependencies" element={<DependenciesPage />} />
+          <Route path="initiation" element={<InitiationPage />} />
+          <Route path="initiation/:demandId" element={<InitiationFormPage />} />
+          <Route path="initiation/:demandId/brd" element={<BrdUploadPage />} />
+          <Route path="planning" element={<PlanningPage />} />
+          <Route path="planning/:demandId/estimates" element={<PmEstimatesPage />} />
+          <Route path="planning/:demandId/wbs" element={<PlanWbsPage />} />
+          <Route path="planning/:demandId/schedule" element={<SchedulePage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/new" element={<InitiateProjectPage />} />
           <Route path="projects/:no" element={<ProjectDetailsPage />} />

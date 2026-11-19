@@ -9,6 +9,13 @@ export type PersonaId =
   | 'ModelCoordinator'
   | 'SectionAdmin'
   | 'Admin'
+  | 'BusinessPartner'
+  | 'BPHead'
+  | 'GovernanceHead'
+  | 'CoEHead'
+  | 'BusinessUser'
+  | 'ProjectManager'
+  | 'TeamMember'
 
 export interface PersonaMeta {
   id: PersonaId
@@ -27,6 +34,13 @@ export const PERSONAS: PersonaMeta[] = [
   { id: 'ModelCoordinator', label: 'Division Model Coordinator', colorKey: 'persona-mc',     hex: '#0891b2' },
   { id: 'SectionAdmin',     label: 'Department Co-ordinator', colorKey: 'persona-sa', hex: '#d97706' },
   { id: 'Admin',            label: 'Admin',             colorKey: 'persona-admin',  hex: '#10b981' },
+  { id: 'BusinessPartner',  label: 'Business Partner',  colorKey: 'persona-admin',  hex: '#0ea5e9' },
+  { id: 'BPHead',           label: 'Business Partner Head', colorKey: 'persona-admin', hex: '#0284c7' },
+  { id: 'GovernanceHead',   label: 'Governance Head',   colorKey: 'persona-admin',  hex: '#7c3aed' },
+  { id: 'CoEHead',          label: 'CoE Head',          colorKey: 'persona-admin',  hex: '#db2777' },
+  { id: 'BusinessUser',     label: 'Business User',     colorKey: 'persona-admin',  hex: '#65a30d' },
+  { id: 'ProjectManager',   label: 'Project Manager',   colorKey: 'persona-admin',  hex: '#ea580c' },
+  { id: 'TeamMember',       label: 'Team Member',       colorKey: 'persona-admin',  hex: '#0d9488' },
 ]
 
 /** Role-only identity: fixed section / vendor per persona (no named users). */

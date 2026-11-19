@@ -79,12 +79,62 @@ const ROLE_HOME: Record<PersonaId, { title: string; job: string; links: RoleLink
       { to: '/activities', label: 'Activities', desc: 'Catalogue', icon: 'list' }
     ]
   },
+  BusinessPartner: {
+    title: 'Business Partner', job: 'Turn approved demands into projects: details, program, VCF and submission.',
+    links: [
+      { to: '/initiation', label: 'Project Initiation', desc: 'Demands and your projects', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
+  BPHead: {
+    title: 'Business Partner Head', job: 'Review submitted projects and programs; approve, send back or reject.',
+    links: [
+      { to: '/initiation', label: 'Project Initiation', desc: 'Submissions to review', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
+  GovernanceHead: {
+    title: 'Governance Head', job: 'Approve new programs so they receive a Program ID.',
+    links: [
+      { to: '/initiation', label: 'Project Initiation', desc: 'New programs to approve', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
+  CoEHead: {
+    title: 'CoE Head', job: 'Approve projects, create Project IDs and assign Project Managers.',
+    links: [
+      { to: '/initiation', label: 'Project Initiation', desc: 'Projects to approve and assign', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
+  BusinessUser: {
+    title: 'Business User', job: 'Upload the detailed BRD once a Project ID exists.',
+    links: [
+      { to: '/initiation', label: 'Project Initiation', desc: 'Projects awaiting a BRD', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
+  ProjectManager: {
+    title: 'Project Manager', job: 'Submit manpower estimates, tag resources, build the WBS and send it for approval.',
+    links: [
+      { to: '/planning', label: 'Project Planning', desc: 'Estimates, tagging and WBS', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
+  TeamMember: {
+    title: 'Team Member', job: 'See the full WBS of the projects you are tagged to.',
+    links: [
+      { to: '/planning', label: 'Project Planning', desc: 'Your projects and their WBS', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
   Admin: {
     title: 'Admin', job: 'Define project archetypes and their activities, build each activity, and maintain sections and milestones.',
     links: [
       { to: '/governance', label: 'Governance', desc: 'Archetypes, WBS and activities', icon: 'gear' },
       { to: '/settings', label: 'Settings', desc: 'Sections and milestones', icon: 'grid' },
       { to: '/projects', label: 'Projects', desc: 'All projects, read-only', icon: 'list' },
+      { to: '/initiation', label: 'Project Initiation', desc: 'Demands to projects, read-only', icon: 'list' },
       { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
     ]
   }

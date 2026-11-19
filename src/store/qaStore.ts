@@ -104,7 +104,9 @@ interface QAStoreState {
   /** Governance: project archetypes (WBS templates). QA objects become Activity Builder activities. */
   archetypes: ProjectArchetype[]
   /** Create or update an archetype and sync its QA objects into activities (create / rename / checklist / retire). */
-  saveArchetype: (archetype: ProjectArchetype) => void
+  saveArchetype: (archetype: ProjectArchetype, opts?: { submit?: boolean }) => void
+  /** Admin: delete an archetype and retire its activities. Refused while projects use it. */
+  deleteArchetype: (id: string) => { ok: true } | { ok: false; reason: string }
   setArchetypeActive: (id: string, active: boolean) => void
   /** Activity-to-activity dependencies, per technical category (Activity Dependencies module). */
   activityDependencies: ActivityDependency[]
@@ -429,22 +431,46 @@ export const useQAStore = create<QAStoreState>()(
       drafts: [],
       savedViews: [],
 
-      saveArchetype: (archetype) =>
+      saveArchetype: (archetype, opts) =>
         set((state) => {
           const previous = state.archetypes.find((a) => a.id === archetype.id)
           const r = syncArchetype(archetype, previous, state.activities, state.drafts)
+          const wasSubmitted = !!previous && previous.status !== 'Draft'
+          let next: ProjectArchetype = { ...r.archetype, version: previous?.version ?? 1, versions: previous?.versions ?? [] }
+          if (opts?.submit || wasSubmitted) {
+            // Submitting (or saving an already submitted archetype) publishes it. An edit of a submitted archetype is a
+            // new version; the old structure is kept so running projects stay on it.
+            next = { ...next, status: 'Submitted' }
+            const changed = JSON.stringify(r.archetype.wbs) !== JSON.stringify(previous!.wbs) || r.archetype.description !== previous!.description
+            if (wasSubmitted && changed) {
+              next.version = (previous!.version ?? 1) + 1
+              next.versions = [...(previous!.versions ?? []), { version: previous!.version ?? 1, submittedAt: new Date().toISOString(), wbs: previous!.wbs }]
+            }
+          } else next = { ...next, status: 'Draft' }
+          const archetypes = previous ? state.archetypes.map((a) => (a.id === archetype.id ? next : a)) : [...state.archetypes, next]
           return {
-            archetypes: previous
-              ? state.archetypes.map((a) => (a.id === archetype.id ? r.archetype : a))
-              : [...state.archetypes, r.archetype],
+            archetypes,
             activities: r.activities,
             drafts: r.drafts,
             // Milestones are defined per archetype; the shared list (filters, dashboards) follows them.
-            milestones: deriveMilestones(previous
-              ? state.archetypes.map((a) => (a.id === archetype.id ? r.archetype : a))
-              : [...state.archetypes, r.archetype]),
+            milestones: deriveMilestones(archetypes),
           }
         }),
+      deleteArchetype: (id) => {
+        const st = get()
+        const arc = st.archetypes.find((a) => a.id === id)
+        if (!arc) return { ok: false, reason: 'Archetype not found.' }
+        const used = st.projects.filter((p) => p.archetypeId === id).length
+        if (used > 0) return { ok: false, reason: `${used} project${used === 1 ? ' uses' : 's use'} this archetype. Mark it inactive instead.` }
+        const ids = new Set(arc.wbs.map((o) => o.activityId).filter(Boolean))
+        const archetypes = st.archetypes.filter((a) => a.id !== id)
+        set({
+          archetypes,
+          activities: st.activities.map((a) => (ids.has(a.id) ? { ...a, retired: true } : a)),
+          milestones: deriveMilestones(archetypes),
+        })
+        return { ok: true }
+      },
       setArchetypeActive: (id, active) =>
         set((state) => ({ archetypes: state.archetypes.map((a) => (a.id === id ? { ...a, active } : a)) })),
 
@@ -883,6 +909,7 @@ export const useQAStore = create<QAStoreState>()(
           no: nextProjectNo(state.projects),
           name: input.name.trim(),
           archetypeId: input.archetypeId,
+          archetypeVersion: state.archetypes.find((a) => a.id === input.archetypeId)?.version ?? 1,
           master: input.master as Project['master'],
           modelNames,
           status: 'InExecution',
@@ -1723,8 +1750,8 @@ export const useQAStore = create<QAStoreState>()(
     }),
     {
       name: 'qa-tracker-store',
-      // v2: planned dates removed from activities; entries keyed by template row. v3: PIC assignments. v4: part applicability. v6: default "Completion rate by Model / Department" charts. v7: part master lifted into store (manual/dummy parts + ECN transfer). v8: PIC release-to-vendor gate. v9: vendor-set planned timelines. v10: actions/recommendations on entries. v11: cross-activity dashboards. v12: table field type + SOR activity. v13: removed Temporary/Permanent from PIC assignments. v14: manpower planning (vendor info + visits). v15: seed activities replaced with ~45 PPT blueprints + deviations on entries. v20: delay reasons (vendor gives, PIC accepts or sends back). v19: vendor acknowledge/return of released parts, ddvm/dvm personas removed. v44: governance archetypes (WBS templates feed the Activity Builder). v45: projects (Project Initiation) gate the work screens; models no longer carry archetypeId. v46: one model per project (seed: one project per model). Stale data is dropped.
-      version: 48,
+      // v2: planned dates removed from activities; entries keyed by template row. v3: PIC assignments. v4: part applicability. v6: default "Completion rate by Model / Department" charts. v7: part master lifted into store (manual/dummy parts + ECN transfer). v8: PIC release-to-vendor gate. v9: vendor-set planned timelines. v10: actions/recommendations on entries. v11: cross-activity dashboards. v12: table field type + SOR activity. v13: removed Temporary/Permanent from PIC assignments. v14: manpower planning (vendor info + visits). v15: seed activities replaced with ~45 PPT blueprints + deviations on entries. v20: delay reasons (vendor gives, PIC accepts or sends back). v19: vendor acknowledge/return of released parts, ddvm/dvm personas removed. v44: governance archetypes (WBS templates feed the Activity Builder). v45: projects (Project Initiation) gate the work screens; models no longer carry archetypeId. v49: company naming replaced with OEM. v46: one model per project (seed: one project per model). Stale data is dropped.
+      version: 49,
       migrate: () => ({})
     }
   )

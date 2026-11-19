@@ -1,6 +1,6 @@
 /**
  * My Workspace → Overview building blocks: compact KPI segments (Parts, Activities, Models) that sit beside the
- * "Workspace by" chart, and the model-wise cards (priority models face up, the rest behind "More models").
+ * "Insights by" chart, and the model-wise cards (priority models face up, the rest behind "More models").
  * Every number opens the matching list.
  *
  * Development stage of a model, from its SOP date (its archetype's last milestone date): before SOP = under
@@ -30,7 +30,7 @@ export type PendRole = (typeof PEND_ROLES)[number]
 export const MINE_KEYS = ['picUpdate', 'vendorUpdate', 'approvePIC', 'approveSIC', 'approveDPM'] as const
 export type MineKey = (typeof MINE_KEYS)[number]
 /**
- * Who has to act next on an open activity: data entry by the PIC or the Vendor, or an MSIL approval (a submitted
+ * Who has to act next on an open activity: data entry by the PIC or the Vendor, or an OEM approval (a submitted
  * activity waiting at the PIC, SIC or DPM step of its flow). Together they are every open activity.
  */
 export function mineBucket(p: { role: string } | null, status: string): MineKey | null {
@@ -77,9 +77,30 @@ interface Tile {
 }
 
 /** Which KPI tiles are hidden (remembered on this screen as the default). */
-const useHiddenTiles = create<{ hidden: string[]; set: (ids: string[]) => void }>()(
-  persist((set) => ({ hidden: [], set: (hidden) => set({ hidden }) }), { name: 'qa-tracker-hidden-tiles', version: 1 })
+/** Which KPI tiles are hidden, and the order the user dragged them into, per card (remembered on this screen). */
+const useHiddenTiles = create<{
+  hidden: string[]
+  set: (ids: string[]) => void
+  order: Record<string, string[]>
+  setOrder: (segment: string, ids: string[]) => void
+}>()(
+  persist(
+    (set) => ({
+      hidden: [],
+      set: (hidden) => set({ hidden }),
+      order: {},
+      setOrder: (segment, ids) => set((st) => ({ order: { ...st.order, [segment]: ids } })),
+    }),
+    { name: 'qa-tracker-hidden-tiles', version: 1 }
+  )
 )
+
+/** Tiles in the saved order; tiles not in it (e.g. new ones) keep their place after the ordered ones. */
+function inSavedOrder(tiles: Tile[], order: string[] | undefined): Tile[] {
+  if (!order?.length) return tiles
+  const pos = new Map(order.map((id, n) => [id, n]))
+  return tiles.map((t, n) => ({ t, k: pos.get(t.id) ?? order.length + n })).sort((a, b) => a.k - b.k).map((x) => x.t)
+}
 
 /** Gear menu listing a card's tiles with a tick each; unticked tiles are hidden. */
 function TilePicker({ title, tiles }: { title: string; tiles: Tile[] }) {
@@ -121,15 +142,29 @@ function TilePicker({ title, tiles }: { title: string; tiles: Tile[] }) {
   )
 }
 
-function Segment({ id, title, icon, tiles, className = '' }: { id: string; title: string; icon: string; tiles: Tile[]; className?: string }) {
+function Segment({ id, title, icon, tiles: given, className = '' }: { id: string; title: string; icon: string; tiles: Tile[]; className?: string }) {
   const [collapsed, toggle] = useCollapsed(id)
-  const hidden = useHiddenTiles((s) => s.hidden)
+  const { hidden, order, setOrder } = useHiddenTiles()
+  const tiles = inSavedOrder(given, order[id])
   const visible = tiles.filter((t) => !hidden.includes(t.id))
+  // Drag a tile onto another to move it there (the new order is remembered).
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
+  const drop = (target: string) => {
+    if (!dragId || dragId === target) return
+    const ids = tiles.map((t) => t.id).filter((x) => x !== dragId)
+    ids.splice(ids.indexOf(target), 0, dragId)
+    setOrder(id, ids)
+  }
   return (
     <section className={`epmp-card p-3 ${collapsed ? 'self-start' : ''} ${className}`}>
       <h3 className={`flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-[#344054] ${collapsed ? '' : 'mb-2'}`}>
         <FbIcon name={icon} size={12} />{title}
         <span className="ml-auto flex items-center gap-0.5">
+          {order[id]?.length ? (
+            <button type="button" onClick={() => setOrder(id, [])} title="Back to the default order" data-export-ignore="true"
+              className="rounded-md px-1.5 py-0.5 text-[10px] font-semibold normal-case tracking-normal text-[var(--color-muted)] hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]">Reset order</button>
+          ) : null}
           <TilePicker title={title} tiles={tiles} />
           <CollapseButton collapsed={collapsed} onToggle={toggle} label={title} />
         </span>
@@ -138,7 +173,17 @@ function Segment({ id, title, icon, tiles, className = '' }: { id: string; title
         <p className="py-2 text-[10.5px] text-[var(--color-muted)]">All tiles hidden. Use <FbIcon name="cog" size={11} /> to show them.</p>
       ) : (
         <div className={TILE_GRID}>
-          {visible.map(({ id: tid, ...t }) => <KpiCard key={tid} {...t} />)}
+          {visible.map(({ id: tid, ...t }) => (
+            <div key={tid} draggable title="Drag to reorder"
+              onDragStart={(e) => { setDragId(tid); e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', tid) }}
+              onDragOver={(e) => { if (dragId) { e.preventDefault(); setOverId(tid) } }}
+              onDragLeave={() => setOverId((o) => (o === tid ? null : o))}
+              onDrop={(e) => { e.preventDefault(); drop(tid); setOverId(null) }}
+              onDragEnd={() => { setDragId(null); setOverId(null) }}
+              className={`grid cursor-grab rounded-lg active:cursor-grabbing ${dragId === tid ? 'opacity-40' : ''} ${overId === tid && dragId !== tid ? 'ring-2 ring-[var(--color-primary)] ring-offset-1' : ''}`}>
+              <KpiCard {...t} />
+            </div>
+          ))}
         </div>
       ))}
     </section>
@@ -170,7 +215,7 @@ function useModelStages(parts: PartRecord[]) {
   }, [parts, models, projects, archetypes])
 }
 
-/** Parts / Activities / Models KPI segments, compact, for the left of the "Workspace by" chart. */
+/** Parts / Activities / Models KPI segments, compact, for the left of the "Insights by" chart. */
 export function OverviewKpis({ instances, parts, pendingRelease, awaitingAck, returned, delayReviews, onGo }: {
   /** The role's activity instances (part × activity), after the page filters. */
   instances: FilteredInstance[]
@@ -231,10 +276,10 @@ export function OverviewKpis({ instances, parts, pendingRelease, awaitingAck, re
         // Who has to act next (these three together are every open activity)
         { id: 'act.picUpdate', title: 'PIC data entry pending', value: act.mine.picUpdate, color: '#6d28d9', icon: 'pen', onClick: () => onGo('overview', { mine: 'picUpdate' }), hint: 'Open activities the PIC has to fill, release or redo' },
         { id: 'act.vendorUpdate', title: 'Awaiting Vendor update', value: act.mine.vendorUpdate, color: '#f97316', icon: 'clipboard', onClick: () => onGo('overview', { mine: 'vendorUpdate' }), hint: 'Open activities the vendor has to fill, acknowledge or redo' },
-        // MSIL approval: submitted activities, by the step they wait at
-        { id: 'act.approvePIC', title: 'Awaiting PIC approval', value: act.mine.approvePIC, color: '#0891b2', icon: 'check', onClick: () => onGo('overview', { mine: 'approvePIC' }), hint: 'MSIL approval: submitted, waiting at the PIC step' },
-        { id: 'act.approveSIC', title: 'Awaiting SIC approval', value: act.mine.approveSIC, color: '#8b5cf6', icon: 'check', onClick: () => onGo('overview', { mine: 'approveSIC' }), hint: 'MSIL approval: submitted, waiting at the SIC step' },
-        { id: 'act.approveDPM', title: 'Awaiting DPM approval', value: act.mine.approveDPM, color: '#6366f1', icon: 'check', onClick: () => onGo('overview', { mine: 'approveDPM' }), hint: 'MSIL approval: submitted, waiting at the DPM step' },
+        // OEM approval: submitted activities, by the step they wait at
+        { id: 'act.approvePIC', title: 'Awaiting PIC approval', value: act.mine.approvePIC, color: '#0891b2', icon: 'check', onClick: () => onGo('overview', { mine: 'approvePIC' }), hint: 'OEM approval: submitted, waiting at the PIC step' },
+        { id: 'act.approveSIC', title: 'Awaiting SIC approval', value: act.mine.approveSIC, color: '#8b5cf6', icon: 'check', onClick: () => onGo('overview', { mine: 'approveSIC' }), hint: 'OEM approval: submitted, waiting at the SIC step' },
+        { id: 'act.approveDPM', title: 'Awaiting DPM approval', value: act.mine.approveDPM, color: '#6366f1', icon: 'check', onClick: () => onGo('overview', { mine: 'approveDPM' }), hint: 'OEM approval: submitted, waiting at the DPM step' },
         // Returned / exceptions
         ...(currentPersona === 'PIC' ? [{ id: 'act.returnedToVendor', title: 'Returned to vendor', value: act.returnedToVendor, color: '#ea580c', icon: 'reply', onClick: () => onGo('overview', { ret: 'vendor' }), hint: `Activities returned to the vendor (by PIC ${act.returnedToVendorBy.PIC}, by SIC ${act.returnedToVendorBy.SIC})` }] : []),
         ...(currentPersona === 'SIC' ? [{ id: 'act.returnedToPic', title: 'Returned to PIC', value: act.returnedToPic, color: '#ea580c', icon: 'reply', onClick: () => onGo('overview', { ret: 'pic' }), hint: 'Activities you (SIC) returned to the PIC' }] : []),
