@@ -89,7 +89,7 @@ export function PlanningPage() {
           className="h-8 w-56 rounded-lg border border-[var(--color-border)] bg-white px-3 text-[11px] text-[#344054]" />} />
       <p className="mb-3 text-[10.5px] text-[var(--color-muted)]">
         {{ ProjectManager: 'Your projects. The action column shows the next step.', BusinessPartner: 'Projects ready for schedule simulation.', CoEHead: 'Projects awaiting a Project Manager, schedule approval or WBS approval.',
-          TeamMember: 'Projects you are tagged to. You can see the complete WBS.', BPHead: 'All projects, read-only.', Admin: 'All projects, read-only.' }[role]}
+          TeamMember: 'Projects you are tagged to. You can see the complete WBS.', ReleaseManager: 'Projects you are tagged to.', ResourceManager: 'Projects with resource tagging.', GovernanceHead: 'All projects, read-only.', BPHead: 'All projects, read-only.', Admin: 'All projects, read-only.' }[role]}
         {waiting > 0 && role !== 'Admin' && role !== 'BPHead' ? ` ${waiting} waiting for you.` : ''}
       </p>
       <Card flush className="!overflow-visible">

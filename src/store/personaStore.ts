@@ -16,6 +16,8 @@ export type PersonaId =
   | 'BusinessUser'
   | 'ProjectManager'
   | 'TeamMember'
+  | 'ReleaseManager'
+  | 'ResourceManager'
 
 export interface PersonaMeta {
   id: PersonaId
@@ -41,6 +43,8 @@ export const PERSONAS: PersonaMeta[] = [
   { id: 'BusinessUser',     label: 'Business User',     colorKey: 'persona-admin',  hex: '#65a30d' },
   { id: 'ProjectManager',   label: 'Project Manager',   colorKey: 'persona-admin',  hex: '#ea580c' },
   { id: 'TeamMember',       label: 'Team Member',       colorKey: 'persona-admin',  hex: '#0d9488' },
+  { id: 'ReleaseManager',   label: 'Release Manager',   colorKey: 'persona-admin',  hex: '#9333ea' },
+  { id: 'ResourceManager',  label: 'Resource Manager',  colorKey: 'persona-admin',  hex: '#b45309' },
 ]
 
 /** Role-only identity: fixed section / vendor per persona (no named users). */

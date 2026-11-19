@@ -2,9 +2,10 @@ import { Card } from '../../components'
 import { usePersonaStore } from '../../store/personaStore'
 import type { PersonaId } from '../../store/personaStore'
 import type { Demand, InitiationRecord } from '../../domain/initiation'
-import { PM_USER, TEAM_MEMBER_USER } from '../../domain/planning'
+import { PM_USER, TEAM_MEMBER_USER, taggedOf } from '../../domain/planning'
+import { RELEASE_MANAGER_USER } from '../../domain/execution'
 
-export const PLAN_ROLES = ['BusinessPartner', 'BPHead', 'CoEHead', 'ProjectManager', 'TeamMember', 'Admin'] as const
+export const PLAN_ROLES = ['BusinessPartner', 'BPHead', 'CoEHead', 'GovernanceHead', 'ProjectManager', 'TeamMember', 'ReleaseManager', 'ResourceManager', 'Admin'] as const
 export type PlanRole = (typeof PLAN_ROLES)[number]
 
 /** The planning role of the current persona, or null when the persona has no access. */
@@ -27,10 +28,12 @@ export function NoPlanAccess() {
 export function canSeeProject(role: PlanRole, r: InitiationRecord): boolean {
   if (!r.projectId) return false
   if (role === 'ProjectManager') return r.pm === PM_USER
-  if (role === 'TeamMember') return (r.tagged ?? []).includes(TEAM_MEMBER_USER)
+  if (role === 'TeamMember') return taggedOf(r).includes(TEAM_MEMBER_USER)
+  if (role === 'ReleaseManager') return taggedOf(r).includes(RELEASE_MANAGER_USER)
+  if (role === 'ResourceManager') return !!r.tagging
   return true
 }
 /** Budget is shown to business and approval roles only. */
-export const canSeeBudget = (role: PlanRole) => role !== 'ProjectManager' && role !== 'TeamMember'
+export const canSeeBudget = (role: PlanRole) => !['ProjectManager', 'TeamMember', 'ReleaseManager', 'ResourceManager'].includes(role)
 
 export type DemandOf = (id: string) => Demand | undefined

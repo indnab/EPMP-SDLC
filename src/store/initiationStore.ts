@@ -7,6 +7,10 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { Demand, EstRow, InitEvent, InitiationRecord, InitRole, Lever, Program, Vcf } from '../domain/initiation'
 import type { PlanItem, PmRow } from '../domain/planning'
+import type { TagRow } from '../domain/execution'
+import { emptyQa, mockJiraItems } from '../domain/execution'
+import type { ClosureItem, ClosureRecord } from '../domain/closure'
+import { SEED_CLOSURE_ITEMS, buildReport, emptyClosure } from '../domain/closure'
 import { emptyProgram, emptyVcf, nextId, todayIso, uid } from '../domain/initiation'
 
 const lever = (name: string, kind: Lever['kind'], amounts: number[]): Lever => ({ id: uid('lv'), name, kind, amounts })
@@ -81,6 +85,42 @@ export function newRecord(d: Demand): InitiationRecord {
   }
 }
 
+// ── Seed WBS for the execution and closure demos ────────────────────────────
+const wi = (id: string, name: string, level: PlanItem['level'], parentId: string | undefined, weight: number, start: string, end: string, extra: Partial<PlanItem> = {}): PlanItem => ({
+  id, name, level, parentId, type: 'General', description: '', weight, plannedStart: start, plannedEnd: end, effort: 10, priority: 'Medium', locked: true, deps: [],
+  frozen: level === 'Milestone', status: 'Open', ...extra,
+})
+const CHK = [
+  { id: 'c1', label: 'Test cases executed', mandatory: true },
+  { id: 'c2', label: 'Defects triaged and closed or accepted', mandatory: true },
+  { id: 'c3', label: 'Business sign-off obtained', mandatory: false },
+]
+const doneQa = (by: string) => ({ ...emptyQa(), ready: true, outcome: 'Pass' as const, outcomeBy: by, reviewed: true, evidence: ['qa-evidence.pdf'], answers: { c1: { ok: true, comment: '' }, c2: { ok: true, comment: '' }, c3: { ok: true, comment: '' } } })
+const SEED_WBS_EXEC: PlanItem[] = [
+  wi('m1', 'Design', 'Milestone', undefined, 25, '2027-01-12', '2027-02-28'),
+  wi('a1', 'Architecture design', 'Activity', 'm1', 50, '2027-01-12', '2027-02-10', { owner: 'Neha Verma', status: 'Completed', actualStart: '2027-01-12', actualEnd: '2027-02-08', progress: 100 }),
+  wi('a2', 'UI wireframes', 'Activity', 'm1', 50, '2027-02-01', '2027-02-28', { owner: 'Rakesh Gupta', status: 'Ongoing', actualStart: '2027-02-02', progress: 40 }),
+  wi('m2', 'Build (JIRA)', 'Milestone', undefined, 25, '2027-03-01', '2027-04-30', { type: 'ImportJira' }),
+  wi('m3', 'Quality', 'Milestone', undefined, 25, '2027-05-01', '2027-06-15'),
+  wi('q1', 'System QA checklist', 'Activity', 'm3', 50, '2027-05-01', '2027-05-20', { type: 'QA', checklist: CHK, qaRmOnly: true, owner: 'Anil Kapoor', qa: emptyQa() }),
+  wi('q2', 'UAT QA checklist', 'Activity', 'm3', 50, '2027-05-21', '2027-06-15', { type: 'QA', checklist: CHK, owner: 'Neha Verma', qa: emptyQa() }),
+  wi('m4', 'Value', 'Milestone', undefined, 25, '2027-06-16', '2027-06-30'),
+  wi('v1', 'Project VCF update', 'Activity', 'm4', 100, '2027-06-16', '2027-06-30', { type: 'VCF' }),
+]
+const SEED_WBS_DONE: PlanItem[] = [
+  wi('m1', 'Delivery', 'Milestone', undefined, 50, '2027-01-12', '2027-04-30'),
+  wi('t1', 'Forecast model', 'Activity', 'm1', 100, '2027-01-12', '2027-04-30', { owner: 'Neha Verma', status: 'Completed', actualStart: '2027-01-13', actualEnd: '2027-04-28', progress: 100 }),
+  wi('m2', 'Quality', 'Milestone', undefined, 50, '2027-05-01', '2027-06-15'),
+  wi('q1', 'QA checklist', 'Activity', 'm2', 100, '2027-05-01', '2027-06-15', { type: 'QA', checklist: CHK, owner: 'Anil Kapoor', status: 'Completed', actualStart: '2027-05-02', actualEnd: '2027-06-10', qa: doneQa('Anil Kapoor') }),
+]
+const seedTag = (names: string[]): { status: 'Approved'; rows: TagRow[] } => ({
+  status: 'Approved',
+  rows: names.map((n, i) => ({ id: `tg${i}`, skill: '', resourceId: `R10${i + 1}`, name: n, designation: '', start: '2027-01-12', end: '2027-06-30', utilization: 100 as const, approved: true })),
+})
+const wbsOf = (items: PlanItem[]) => ({ items, status: 'Approved' as const, importedFrom: { archetypeId: 'ARC-001', version: 1 } })
+const sched = { plannedStart: '2027-01-12', plannedEnd: '2027-06-30', earliestStart: '2027-01-12', status: 'Approved' as const, usedPmEstimates: true }
+const SEED_PM_HISTORY = [{ pm: 'Aman Singh', by: 'CoE Head', at: '2026-11-02T09:00:00.000Z' }]
+
 const D = (id: string) => SEED_DEMANDS.find((d) => d.demandId === id)!
 export const SEED_RECORDS: Record<string, InitiationRecord> = {
   'DM-1004': seedRecord(D('DM-1004'), 'PendingBPHead', { programMode: 'existing', programId: 'PGM-2001', vcf: sampleVcf(1.6) }),
@@ -89,7 +129,10 @@ export const SEED_RECORDS: Record<string, InitiationRecord> = {
     newProgram: { name: 'Plant Energy Insights', type: 'Manufacturing', description: 'Energy monitoring across plants.', startYear: '2027', ownership: 'E1005: Kavita Joshi', businessSpoc: 'E1002: Sandeep Kulkarni', businessVertical: 'Manufacturing', dePillar: 'Smart Manufacturing', investmentCategory: 'Efficiency', classification: 'Transformation' },
   }),
   'DM-1006': seedRecord(D('DM-1006'), 'PendingCoE', { programMode: 'existing', programId: 'PGM-2002', vcf: sampleVcf(1.1) }),
-  'DM-1007': seedRecord(D('DM-1007'), 'Approved', { programMode: 'existing', programId: 'PGM-2001', projectId: 'PID-3001', vcf: sampleVcf(1.2) }),
+  'DM-1007': seedRecord(D('DM-1007'), 'Approved', {
+    programMode: 'existing', programId: 'PGM-2001', projectId: 'PID-3001', pm: 'Aman Singh', vcf: sampleVcf(1.2), schedule: sched, pmHistory: SEED_PM_HISTORY,
+    tagged: ['Neha Verma', 'Anil Kapoor'], wbs: wbsOf(SEED_WBS_DONE),
+  }),
   'DM-1008': seedRecord(D('DM-1008'), 'Approved', {
     programMode: 'existing', programId: 'PGM-2001', projectId: 'PID-3002', pm: 'Aman Singh', vcf: sampleVcf(0.9),
     brd: { fileName: 'Showroom_lead_tracker_BRD.docx', uploadedAt: '2026-10-20T10:00:00.000Z' },
@@ -100,7 +143,9 @@ export const SEED_RECORDS: Record<string, InitiationRecord> = {
       { id: 'pe3', skillset: 'UI/UX Designer', headcount: 4, days: 13, utilization: 46 },
     ],
     schedule: { plannedStart: '2027-01-12', plannedEnd: '2027-06-30', earliestStart: '2027-01-12', status: 'Approved', usedPmEstimates: true },
-    tagged: ['Neha Verma', 'Rakesh Gupta', 'Anita Sharma'],
+    tagged: ['Neha Verma', 'Rakesh Gupta', 'Anita Sharma', 'Anil Kapoor'],
+    tagging: seedTag(['Neha Verma', 'Rakesh Gupta', 'Anita Sharma', 'Anil Kapoor']),
+    wbs: wbsOf(SEED_WBS_EXEC), pmHistory: SEED_PM_HISTORY,
   }),
 }
 
@@ -128,6 +173,26 @@ interface InitiationState {
   saveWbs: (demandId: string, items: PlanItem[], wbs?: InitiationRecord['wbs']) => void
   submitWbs: (demandId: string) => void
   decideWbs: (demandId: string, decision: 'approve' | 'sendBack' | 'reject', comment: string, jira: boolean) => void
+  // ── Execution ──
+  closureItems: ClosureItem[]
+  /** Project Manager sends the tagging request; the Resource Manager is notified. */
+  submitTagging: (demandId: string, rows: TagRow[]) => void
+  decideTagging: (demandId: string, decision: 'approve' | 'sendBack', comment: string) => void
+  /** Update execution fields of one WBS item (owner, status, actuals, QA state). Owner changes notify the new owner. */
+  updateItem: (demandId: string, itemId: string, patch: Partial<PlanItem>, by: string) => void
+  /** Project Manager adds a QA checklist activity during execution. */
+  addQaItem: (demandId: string, item: PlanItem, by: string) => void
+  /** Trigger the JIRA workspace for a JIRA-defined milestone; its WBS then rolls up read-only. */
+  triggerJira: (demandId: string, milestoneId: string) => void
+  /** CoE Head changes the Project Manager at any stage. The approved baseline is untouched. */
+  changePm: (demandId: string, pm: string, reason: string) => void
+  // ── Closure ──
+  saveClosure: (demandId: string, patch: Partial<ClosureRecord>) => void
+  submitClosure: (demandId: string) => void
+  decideClosure: (demandId: string, role: 'CoEHead' | 'GovernanceHead', decision: 'approve' | 'sendBack', comment: string, ctx: { projectName: string; budget: number }) => void
+  addClosureItem: (label: string, archetypeIds: string[]) => void
+  updateClosureItem: (id: string, patch: Partial<ClosureItem>) => void
+  deleteClosureItem: (id: string) => void
   reset: () => void
 }
 
@@ -140,6 +205,7 @@ export const useInitiationStore = create<InitiationState>()(
       demands: SEED_DEMANDS,
       programs: SEED_PROGRAMS,
       records: SEED_RECORDS,
+      closureItems: SEED_CLOSURE_ITEMS,
       ensureRecord: (demandId) => {
         const s = get()
         if (s.records[demandId]) return s.records[demandId]
@@ -196,7 +262,91 @@ export const useInitiationStore = create<InitiationState>()(
           }))
         }),
       assignPm: (demandId, pm) =>
-        set((s) => upd(s, demandId, (r) => ({ ...r, pm, events: [...r.events, ev('CoE Head', `Project Manager set to ${pm}`, [pm, 'Business Partner'])] }))),
+        set((s) => upd(s, demandId, (r) => ({
+          ...r, pm, pmHistory: [...(r.pmHistory ?? []), { pm, by: 'CoE Head', at: todayIso() }],
+          events: [...r.events, ev('CoE Head', `Project Manager set to ${pm}`, [pm, 'Business Partner'])],
+        }))),
+      changePm: (demandId, pm, reason) =>
+        set((s) => upd(s, demandId, (r) => r.pm === pm ? r : ({
+          ...r, pm, pmHistory: [...(r.pmHistory ?? []), { pm, by: 'CoE Head', at: todayIso(), reason: reason || undefined }],
+          events: [...r.events, ev('CoE Head', `Project Manager changed from ${r.pm ?? 'none'} to ${pm}${reason ? `: ${reason}` : ''}. Baseline unchanged`, [pm, ...(r.pm ? [r.pm] : []), 'Business Partner'])],
+        }))),
+      submitTagging: (demandId, rows) =>
+        set((s) => upd(s, demandId, (r) => ({
+          // Resources already approved stay tagged; only new rows wait for the Resource Manager.
+          ...r, tagging: { status: rows.some((x) => !x.approved) ? 'Submitted' : 'Approved', rows },
+          events: [...r.events, ev('Project Manager', `Resource tagging submitted (${rows.length} resource${rows.length === 1 ? '' : 's'})`, ['Resource Manager'])],
+        }))),
+      decideTagging: (demandId, decision, comment) =>
+        set((s) => upd(s, demandId, (r) => {
+          if (!r.tagging) return r
+          const ok = decision === 'approve'
+          return {
+            ...r, tagging: { ...r.tagging, status: ok ? 'Approved' : 'SentBack', lastComment: comment || undefined, rows: ok ? r.tagging.rows.map((x) => ({ ...x, approved: true })) : r.tagging.rows.filter((x) => x.approved) },
+            events: [...r.events, ev('Resource Manager', ok ? 'Resource tagging approved' : `Resource tagging sent back: ${comment}`, [...(r.pm ? [r.pm] : [])])],
+          }
+        })),
+      updateItem: (demandId, itemId, patch, by) =>
+        set((s) => upd(s, demandId, (r) => {
+          if (!r.wbs) return r
+          const old = r.wbs.items.find((i) => i.id === itemId)
+          if (!old) return r
+          const items = r.wbs.items.map((i) => (i.id === itemId ? { ...i, ...patch } : i))
+          const notes: InitEvent[] = []
+          if (patch.owner && patch.owner !== old.owner) notes.push(ev(by, `${old.name} assigned to ${patch.owner}`, [patch.owner]))
+          if (patch.status && patch.status !== old.status) notes.push(ev(by, `${old.name} set to ${patch.status}`))
+          if (patch.qa?.outcome && patch.qa.outcome !== old.qa?.outcome) notes.push(ev(by, `${old.name}: QA ${patch.qa.outcome}`, [...(r.pm ? [r.pm] : [])]))
+          if (patch.qa?.reviewed && !old.qa?.reviewed) notes.push(ev(by, `${old.name}: QA task complete`, [...(r.pm ? [r.pm] : []), ...(old.owner ? [old.owner] : [])]))
+          return { ...r, wbs: { ...r.wbs, items }, events: [...r.events, ...notes] }
+        })),
+      addQaItem: (demandId, item, by) =>
+        set((s) => upd(s, demandId, (r) => r.wbs ? ({
+          ...r, wbs: { ...r.wbs, items: [...r.wbs.items, { ...item, addedInExecution: true, locked: true, status: 'Open', qa: emptyQa() }] },
+          events: [...r.events, ev(by, `QA checklist activity added: ${item.name}`, item.owner ? [item.owner] : [])],
+        }) : r)),
+      triggerJira: (demandId, milestoneId) =>
+        set((s) => upd(s, demandId, (r) => {
+          if (!r.wbs || (r.jiraTriggered ?? []).includes(milestoneId)) return r
+          const ms = r.wbs.items.find((i) => i.id === milestoneId)
+          if (!ms) return r
+          const key = (r.projectId ?? 'PRJ').replace(/\W/g, '').slice(0, 6).toUpperCase()
+          return {
+            ...r, jiraTriggered: [...(r.jiraTriggered ?? []), milestoneId],
+            wbs: { ...r.wbs, items: [...r.wbs.items, ...mockJiraItems(ms, key)] },
+            events: [...r.events, ev('Project Manager', `JIRA workspace requested for ${ms.name}`, ['JIRA Admin']), ev('System', `JIRA items imported under ${ms.name} (read-only)`, [])],
+          }
+        })),
+      saveClosure: (demandId, patch) =>
+        set((s) => upd(s, demandId, (r) => ({ ...r, closure: { ...(r.closure ?? emptyClosure()), ...patch } }))),
+      submitClosure: (demandId) =>
+        set((s) => upd(s, demandId, (r) => ({
+          ...r, closure: { ...(r.closure ?? emptyClosure()), status: 'WithCoE', submittedAt: todayIso() },
+          events: [...r.events, ev('Project Manager', 'Closure submitted', ['CoE Head'])],
+        }))),
+      decideClosure: (demandId, role, decision, comment, ctx) =>
+        set((s) => upd(s, demandId, (r) => {
+          const c = r.closure
+          if (!c) return r
+          const by = role === 'CoEHead' ? 'CoE Head' : 'Governance Head'
+          const review = { by, role, decision: decision === 'approve' ? 'Approved' as const : 'Sent back' as const, text: comment, at: todayIso() }
+          if (decision === 'sendBack') {
+            return { ...r, closure: { ...c, status: 'SentBack', reviews: [...c.reviews, review] },
+              events: [...r.events, ev(by, `Closure sent back: ${comment}`, [...(r.pm ? [r.pm] : []), ...(role === 'GovernanceHead' ? ['CoE Head'] : [])])] }
+          }
+          if (role === 'CoEHead') {
+            return { ...r, closure: { ...c, status: 'WithGovernance', reviews: [...c.reviews, review] }, events: [...r.events, ev(by, 'Closure approved', ['Governance Head'])] }
+          }
+          // Final approval: lock the project and archive the closure artefacts.
+          const report = buildReport(r, ctx.projectName, ctx.budget, r.vcf.consumedBudget)
+          return {
+            ...r, closure: { ...c, status: 'Closed', reviews: [...c.reviews, review], closedAt: todayIso(), report },
+            wbs: r.wbs ? { ...r.wbs, items: r.wbs.items.map((i) => ({ ...i, locked: true })) } : r.wbs,
+            events: [...r.events, ev(by, 'Closure approved. Project locked and archived', [...(r.pm ? [r.pm] : []), 'CoE Head'])],
+          }
+        })),
+      addClosureItem: (label, archetypeIds) => set((s) => ({ closureItems: [...s.closureItems, { id: uid('cl'), label, archetypeIds }] })),
+      updateClosureItem: (id, patch) => set((s) => ({ closureItems: s.closureItems.map((i) => (i.id === id ? { ...i, ...patch } : i)) })),
+      deleteClosureItem: (id) => set((s) => ({ closureItems: s.closureItems.filter((i) => i.id !== id) })),
       saveSchedule: (demandId, bpEstimates, schedule, submit) =>
         set((s) => upd(s, demandId, (r) => ({
           ...r, bpEstimates, schedule: { ...schedule, status: submit ? 'Submitted' : 'Draft' },
@@ -252,8 +402,8 @@ export const useInitiationStore = create<InitiationState>()(
               ...(decision === 'approve' && jira ? [ev('System', 'JIRA workspace requested for the JIRA-defined milestones', ['JIRA Admin'])] : [])],
           }
         })),
-      reset: () => set({ demands: SEED_DEMANDS, programs: SEED_PROGRAMS, records: SEED_RECORDS }),
+      reset: () => set({ demands: SEED_DEMANDS, programs: SEED_PROGRAMS, records: SEED_RECORDS, closureItems: SEED_CLOSURE_ITEMS }),
     }),
-    { name: 'epmp-initiation', version: 3, migrate: () => ({}) }
+    { name: 'epmp-initiation', version: 4, migrate: () => ({}) }
   )
 )

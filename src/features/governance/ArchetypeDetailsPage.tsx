@@ -321,6 +321,14 @@ export function ArchetypeDetailsPage() {
                             Planned dates ({nDates})
                           </button>
                         </span>
+                      ) : o.type === 'QA' ? (
+                        <span className="flex flex-wrap items-center justify-end gap-2">
+                          {o.qaOwnershipReleaseManager && <span className="whitespace-nowrap rounded-full bg-violet-100 px-2 py-0.5 text-[10px] font-medium text-violet-800">Release Manager owns</span>}
+                          <button type="button" onClick={() => setChecklistFor(o.id)}
+                            className="whitespace-nowrap rounded-full border border-[var(--color-primary)] px-2.5 py-1 text-[10px] font-semibold text-[var(--color-primary)] hover:bg-[var(--color-secondary)]">
+                            {o.checklist?.length ? `QA Checklist (${o.checklist.length})` : 'Add QA Checklist'}
+                          </button>
+                        </span>
                       ) : isBuildable(o) ? (
                         <span className="flex flex-wrap items-center justify-end gap-2">
                           <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[10px] font-medium ${STATE_CLS[state]}`}>{state}</span>
@@ -409,6 +417,7 @@ export function ArchetypeDetailsPage() {
       {chkObj && (
         <ChecklistModal
           obj={chkObj}
+          qaType={chkObj.type === 'QA'}
           readOnly={!isAdmin}
           onClose={() => setChecklistFor(null)}
           onSave={(checklist, qaOwnershipReleaseManager) => { setObj(chkObj.id, { checklist, qaOwnershipReleaseManager }); setChecklistFor(null) }}
@@ -533,8 +542,9 @@ function DependencyModal({ obj, candidates, readOnly, onClose, onSave }: {
   )
 }
 
-function ChecklistModal({ obj, readOnly, onClose, onSave }: {
+function ChecklistModal({ obj, qaType, readOnly, onClose, onSave }: {
   obj: WbsObject
+  qaType?: boolean
   readOnly: boolean
   onClose: () => void
   onSave: (checklist: WbsChecklistItem[], qaOwnershipReleaseManager: boolean) => void
@@ -544,7 +554,7 @@ function ChecklistModal({ obj, readOnly, onClose, onSave }: {
   const setItem = (id: string, patch: Partial<WbsChecklistItem>) => setItems((xs) => xs.map((x) => (x.id === id ? { ...x, ...patch } : x)))
   const filled = items.filter((x) => x.label.trim())
   return (
-    <Modal open onClose={onClose} size="md" title={`Checklist · ${obj.name || 'Activity'}`}
+    <Modal open onClose={onClose} size="md" title={`${qaType ? 'QA Checklist' : 'Checklist'} · ${obj.name || 'Activity'}`}
       footer={readOnly ? <Button variant="secondary" size="md" onClick={onClose}>Close</Button> : (
         <>
           <Button variant="secondary" size="md" onClick={onClose}>Cancel</Button>
@@ -589,7 +599,7 @@ function ChecklistModal({ obj, readOnly, onClose, onSave }: {
       <p className="mt-1 text-[10.5px] text-[var(--color-muted)]">
         {owner ? <>Owners of this QA item can only be Release Managers: {RELEASE_MANAGERS.join(', ')}.</> : 'Otherwise the owner is any member allocated to the project.'}
       </p>
-      <p className="mt-2 text-[10.5px] text-[var(--color-muted)]">Each item becomes a Yes/No field on this activity (required if Mandatory). You can refine them in the Activity Builder.</p>
+      <p className="mt-2 text-[10.5px] text-[var(--color-muted)]">{qaType ? 'Projects of this archetype get this checklist on the QA item. The owner answers it in Project Execution; Pass or Fail follows once the Project Manager marks it ready.' : 'Each item becomes a Yes/No field on this activity (required if Mandatory). You can refine them in the Activity Builder.'}</p>
     </Modal>
   )
 }

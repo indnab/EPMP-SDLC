@@ -14,9 +14,10 @@ import { isBuildable } from '../../domain'
 import { ArchetypesPage } from './ArchetypesPage'
 import { BuilderPage } from '../builder/BuilderPage'
 import { ActivityLibrary } from './ActivityLibrary'
+import { ClosureChecklistAdmin } from './ClosureChecklistAdmin'
 
-type GovTab = 'archetypes' | 'builder' | 'library'
-const TABS: GovTab[] = ['archetypes', 'builder', 'library']
+type GovTab = 'archetypes' | 'builder' | 'library' | 'closure'
+const TABS: GovTab[] = ['archetypes', 'builder', 'library', 'closure']
 
 export function GovernancePage() {
   const [params, setParams] = useSearchParams()
@@ -60,11 +61,13 @@ export function GovernancePage() {
           { id: 'archetypes', label: 'Archetypes', badge: archetypes.length || undefined },
           { id: 'builder', label: 'Activity Builder', badge: toBuild || undefined },
           { id: 'library', label: 'Activity Library' },
+          { id: 'closure', label: 'Closure Checklist' },
         ]}
       />
       {tab === 'archetypes' && <ArchetypesPage embedded />}
       {tab === 'builder' && <BuilderPage embedded />}
       {tab === 'library' && <ActivityLibrary />}
+      {tab === 'closure' && <ClosureChecklistAdmin />}
     </div>
   )
 }

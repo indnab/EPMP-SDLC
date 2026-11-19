@@ -83,6 +83,8 @@ export const emptyProgram = (): ProgramDetails => ({
 export interface Program extends ProgramDetails { programId: string; division: string; vcfVersions: VcfVersion[] }
 
 import type { PlanWbs, PmRow } from './planning'
+import type { Tagging } from './execution'
+import type { ClosureRecord } from './closure'
 /** One estimate row (Project Manager's or Business Partner's): a skillset needed over a date range. */
 export interface EstRow { id: string; skillset: string; resources: number; utilization: number; from: string; to: string }
 export interface Schedule {
@@ -125,6 +127,13 @@ export interface InitiationRecord {
   /** Resources tagged to the project (owners of WBS items are picked from these). */
   tagged?: string[]
   wbs?: PlanWbs
+  /** Resource tagging (Execution): rows are approved by the Resource Manager. */
+  tagging?: Tagging
+  /** JIRA workspaces requested per JIRA-defined milestone (WBS item ids). */
+  jiraTriggered?: string[]
+  /** Every Project Manager the project has had, newest last. Changing the PM never reopens the baseline. */
+  pmHistory?: { pm: string; by: string; at: string; reason?: string }[]
+  closure?: ClosureRecord
   /** Business Partner's own estimates for schedule simulation. */
   bpEstimates?: EstRow[]
   schedule?: Schedule

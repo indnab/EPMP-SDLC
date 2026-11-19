@@ -22,6 +22,11 @@ import { DependenciesPage } from './features/dependencies/DependenciesPage'
 import { GovernancePage } from './features/governance/GovernancePage'
 import { InitiationPage } from './features/initiation/InitiationPage'
 import { InitiationFormPage } from './features/initiation/InitiationFormPage'
+import { ExecutionPage } from './features/execution/ExecutionPage'
+import { ExecWbsPage } from './features/execution/ExecWbsPage'
+import { QualityPage } from './features/quality/QualityPage'
+import { ClosurePage } from './features/closure/ClosurePage'
+import { ClosureDetailPage } from './features/closure/ClosureDetailPage'
 import { PlanningPage } from './features/planning/PlanningPage'
 import { PmEstimatesPage } from './features/planning/PmEstimatesPage'
 import { PlanWbsPage } from './features/planning/PlanWbsPage'
@@ -96,6 +101,11 @@ export default function App() {
           <Route path="initiation" element={<InitiationPage />} />
           <Route path="initiation/:demandId" element={<InitiationFormPage />} />
           <Route path="initiation/:demandId/brd" element={<BrdUploadPage />} />
+          <Route path="execution" element={<ExecutionPage />} />
+          <Route path="execution/:demandId" element={<ExecWbsPage />} />
+          <Route path="quality" element={<QualityPage />} />
+          <Route path="closure" element={<ClosurePage />} />
+          <Route path="closure/:demandId" element={<ClosureDetailPage />} />
           <Route path="planning" element={<PlanningPage />} />
           <Route path="planning/:demandId/estimates" element={<PmEstimatesPage />} />
           <Route path="planning/:demandId/wbs" element={<PlanWbsPage />} />

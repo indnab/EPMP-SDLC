@@ -372,7 +372,7 @@ function NewProgramForm({ p, editable, errors, onChange }: { p: ProgramDetails; 
   )
 }
 
-function VcfTab({ rec, program, editable, errors, onChange, onViewVersion }: {
+export function VcfTab({ rec, program, editable, errors, onChange, onViewVersion }: {
   rec: InitiationRecord
   program?: { programId: string; name: string; investmentCategory: string; classification: string; vcfVersions: VcfVersion[] }
   editable: boolean
@@ -504,7 +504,7 @@ function Kpi({ label, value, red }: { label: string; value: string; red?: boolea
   )
 }
 
-function VersionModal({ version, programName, onClose }: { version: VcfVersion; programName: string; onClose: () => void }) {
+export function VersionModal({ version, programName, onClose }: { version: VcfVersion; programName: string; onClose: () => void }) {
   const s = summarize(version.vcf)
   const download = () => {
     const blob = new Blob([JSON.stringify({ program: programName, version: version.version, savedAt: version.savedAt, ...version.vcf }, null, 2)], { type: 'application/json' })

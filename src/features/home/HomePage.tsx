@@ -128,6 +128,20 @@ const ROLE_HOME: Record<PersonaId, { title: string; job: string; links: RoleLink
       { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
     ]
   },
+  ReleaseManager: {
+    title: 'Release Manager', job: 'Complete the QA checklists assigned to you and record Pass or Fail.',
+    links: [
+      { to: '/quality', label: 'Quality Management', desc: 'Your QA checklists', icon: 'check' },
+      { to: '/execution', label: 'Project Execution', desc: 'Projects and WBS', icon: 'list' }
+    ]
+  },
+  ResourceManager: {
+    title: 'Resource Manager', job: 'Review resource tagging requests from Project Managers.',
+    links: [
+      { to: '/execution', label: 'Project Execution', desc: 'Tagging requests to review', icon: 'list' },
+      { to: '/dashboards', label: 'Dashboards', desc: 'Overview', icon: 'chart' }
+    ]
+  },
   Admin: {
     title: 'Admin', job: 'Define project archetypes and their activities, build each activity, and maintain sections and milestones.',
     links: [

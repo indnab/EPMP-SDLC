@@ -82,6 +82,8 @@ export function syncArchetype(
     if (!isBuildable(obj)) {
       // Changed away from Activity Builder: its activity is retired and the link dropped.
       if (obj.activityId) acts = acts.map((a) => (a.id === obj.activityId ? { ...a, retired: true } : a))
+      // QA objects keep their checklist and ownership rule: it is completed in Project Execution (no Activity Builder activity).
+      if (obj.type === 'QA') return { ...obj, activityId: undefined }
       return { ...obj, activityId: undefined, checklist: undefined, qaOwnershipReleaseManager: undefined }
     }
     const id = activityIdFor(arc, obj)

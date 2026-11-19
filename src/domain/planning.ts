@@ -4,6 +4,7 @@
  */
 import type { DependencyType, ProjectArchetype, WbsLevel } from './index'
 import type { InitiationRecord } from './initiation'
+import type { QaState, WorkStatus } from './execution'
 import { durationDays, toIso, toMs } from './initiation'
 
 /** Prototype people. The Project Manager and Team Member personas stand for these named users. */
@@ -55,6 +56,23 @@ export interface PlanItem {
   /** Milestones from the archetype: not changeable or removable by the PM. */
   frozen?: boolean
   deps: PlanDep[]
+  // ── Execution ──
+  status?: WorkStatus
+  /** 0 to 100 for a leaf row; parents roll up from their children. */
+  progress?: number
+  /** QA checklist (copied from the archetype object) and its milestone state. */
+  checklist?: { id: string; label: string; mandatory: boolean }[]
+  /** Archetype rule: QA owners can only be Release Managers. */
+  qaRmOnly?: boolean
+  qa?: QaState
+  /** Actual effort in person-days (QA items). */
+  actualEffort?: number
+  /** Created in JIRA and rolled up read-only. jiraType is the JIRA issue type (Epic / Story / Task). */
+  source?: 'JIRA'
+  jiraKey?: string
+  jiraType?: string
+  /** Added during execution (QA checklist activities) after the baseline was approved. */
+  addedInExecution?: boolean
 }
 
 export type WbsStatus = 'Draft' | 'Submitted' | 'Approved' | 'SentBack' | 'Rejected'
@@ -125,7 +143,7 @@ export function importWbs(arc: ProjectArchetype, version: number, start: string,
     items.push({
       id: o.id, parentId: p, level: o.level, type: o.type, name: o.name, description: '', weight: weightOf.get(o.id) ?? 0,
       plannedStart: ps, plannedEnd: pe, effort: 0, priority: 'Medium', locked: false, frozen: o.level === 'Milestone',
-      deps: [],
+      deps: [], checklist: o.checklist?.map((c) => ({ ...c })), qaRmOnly: o.qaOwnershipReleaseManager,
     })
   }
   // Parents before children so dates cascade.
@@ -190,7 +208,8 @@ export function wbsErrors(items: PlanItem[]): string[] {
 }
 
 /** Names tagged to the project (owners are picked from these only). */
-export const taggedOf = (r: InitiationRecord): string[] => r.tagged ?? []
+export const taggedOf = (r: InitiationRecord): string[] =>
+  [...new Set([...(r.tagged ?? []), ...(r.tagging?.rows.filter((x) => x.approved).map((x) => x.name) ?? [])])]
 
 export type PlanningStatus =
   | 'AwaitingPM' | 'EstimatesPending' | 'SchedulePending' | 'ScheduleSubmitted' | 'ScheduleSentBack' | 'ScheduleRejected'
@@ -213,7 +232,7 @@ export function planningStatus(r: InitiationRecord, sdlc: boolean): PlanningStat
   if (s.status === 'Submitted') return 'ScheduleSubmitted'
   if (s.status === 'SentBack') return 'ScheduleSentBack'
   if (s.status === 'Rejected') return 'ScheduleRejected'
-  if (!(r.tagged?.length)) return 'TaggingPending'
+  if (taggedOf(r).length === 0) return 'TaggingPending'
   if (sdlc) return 'Baselined'
   const w = r.wbs
   if (!w) return 'WbsPending'
