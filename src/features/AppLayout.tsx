@@ -181,14 +181,14 @@ export function AppLayout() {
         <NavLink
           to="/"
           aria-label="EPMP home"
-          className="flex h-[72px] flex-none flex-col items-center justify-center border-b border-white/[.12] px-3"
+          className="flex h-[84px] flex-none flex-col items-center justify-center border-b border-white/[.12] px-3"
         >
           {navCollapsed ? (
             <span className="text-lg font-bold tracking-wide">EP</span>
           ) : (
             <>
               <span className="text-[22px] font-bold leading-none tracking-[.14em]">EPMP</span>
-              <span className="mt-1 text-[9.5px] uppercase tracking-[.12em] text-[var(--color-nav-sub)]">Enterprise Project Management</span>
+              <span className="mt-1.5 text-center text-[8.5px] uppercase leading-[12px] tracking-[.1em] text-[var(--color-nav-sub)]">Enterprise Project<br />Management Platform</span>
             </>
           )}
         </NavLink>
